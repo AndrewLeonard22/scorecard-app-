@@ -23,18 +23,28 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
 
   const { pathname } = request.nextUrl
+
+  // PREVIEW MODE: auth bypassed — remove this block once Supabase is connected
+  if (process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true') {
+    return supabaseResponse
+  }
 
   // Unauthenticated → login
   if (!user && pathname !== '/login') {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Authenticated + login page → dashboard
+  // Authenticated + login page → redirect to appropriate home
   if (user && pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Legacy /submit route → /me
+  if (pathname === '/submit' || pathname.startsWith('/submit/')) {
+    return NextResponse.redirect(new URL('/me', request.url))
   }
 
   // Admin-only route guard

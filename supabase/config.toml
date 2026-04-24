@@ -1,23 +1,32 @@
-[project]
-id = "your-project-id"  # replace after creating project at app.supabase.com
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
 
 [auth]
+enabled = true
 site_url = "https://scorecard.socialworkspro.com"
 additional_redirect_urls = ["http://localhost:3000"]
 jwt_expiry = 3600
-enable_signup = false  # invite-only, not open registration
+enable_signup = false
 
 [auth.email]
 enable_confirmations = true
 
-# Bonus calculation: Thursday 8 AM UTC
-[[cron]]
-name = "calculate-bonuses"
-schedule = "0 8 * * 4"
-command = "SELECT net.http_post(url := 'https://your-project-id.supabase.co/functions/v1/calculate-bonuses', headers := '{\"Authorization\": \"Bearer ' || current_setting('app.service_role_key') || '\"}');"
-
-# Lock old submissions: Thursday 8 AM UTC (runs before bonus calc)
-[[cron]]
-name = "lock-submissions"
-schedule = "0 7 * * 4"
-command = "SELECT lock_old_submissions();"
+[storage]
+enabled = true

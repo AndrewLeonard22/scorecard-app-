@@ -1,92 +1,64 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DashboardClient } from './DashboardClient'
-import { getWeekStartString, getWeeksBack } from '@/lib/utils/weekUtils'
-import { format, startOfMonth } from 'date-fns'
+import { getCurrentMonth } from '@/lib/utils/monthUtils'
+import {
+  MOCK_PROFILES,
+  MOCK_KPI_DEFINITIONS,
+  MOCK_SUBMISSIONS,
+} from '@/lib/mockData'
 
-export default async function DashboardPage() {
+const PREVIEW = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true'
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }> | { month?: string }
+}) {
+  const resolvedParams = await Promise.resolve(searchParams)
+  const selectedMonth = resolvedParams?.month ?? getCurrentMonth()
+
+  if (PREVIEW) {
+    const adminProfile = MOCK_PROFILES.find(p => p.role === 'admin')!
+    return (
+      <DashboardClient
+        currentProfile={adminProfile}
+        profiles={MOCK_PROFILES}
+        submissions={MOCK_SUBMISSIONS.filter(s => s.month === selectedMonth)}
+        kpis={MOCK_KPI_DEFINITIONS}
+        selectedMonth={selectedMonth}
+        monthsWithData={['2026-04', '2026-03', '2026-02']}
+      />
+    )
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const weekStart = getWeekStartString()
-  const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd')
-  const last8Weeks = getWeeksBack(8)
+  const [profilesRes, submissionsRes, kpisRes, monthsRes] = await Promise.all([
+    supabase.from('profiles').select('*').eq('active', true).order('full_name'),
+    supabase.from('monthly_submissions').select('*').eq('month', selectedMonth),
+    supabase.from('kpi_definitions').select('*').eq('active', true).order('display_order'),
+    supabase.from('monthly_submissions').select('month').eq('user_id', user.id),
+  ])
 
-  // Fetch all active profiles
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('active', true)
-    .order('full_name')
-
-  // Fetch current user profile
-  const currentProfile = profiles?.find(p => p.id === user.id)
-
-  // Fetch current week submissions + values for all users
-  const { data: weekSubmissions } = await supabase
-    .from('submissions')
-    .select('*, submission_values(*), profiles(full_name, role)')
-    .eq('week_start', weekStart)
-
-  // Fetch MTD submissions
-  const { data: mtdSubmissions } = await supabase
-    .from('submissions')
-    .select('*, submission_values(*)')
-    .gte('week_start', monthStart)
-    .lte('week_start', weekStart)
-
-  // Fetch 8-week history for current user
-  const { data: myHistory } = await supabase
-    .from('submissions')
-    .select('*, submission_values(*)')
-    .eq('user_id', user.id)
-    .in('week_start', last8Weeks)
-    .order('week_start')
-
-  // Fetch KPI definitions
-  const { data: kpis } = await supabase
-    .from('kpi_definitions')
-    .select('*')
-    .eq('active', true)
-    .order('display_order')
-
-  // Fetch bonus calculations for current user (and all if admin)
-  const bonusQuery = supabase
-    .from('bonus_calculations')
-    .select('*')
-    .eq('period_type', 'monthly')
-    .order('period', { ascending: false })
-    .limit(3)
-
-  if (currentProfile?.role !== 'admin') {
-    bonusQuery.eq('user_id', user.id)
-  }
-  const { data: bonusCalcs } = await bonusQuery
-
-  // Fetch recent notes
-  const { data: recentNotes } = await supabase
-    .from('submissions')
-    .select('notes, week_start, submitted_at, profiles(full_name, role)')
-    .not('notes', 'is', null)
-    .neq('notes', '')
-    .order('submitted_at', { ascending: false })
-    .limit(10)
+  const profiles = profilesRes.data ?? []
+  const submissions = submissionsRes.data ?? []
+  const kpis = kpisRes.data ?? []
+  const monthsWithData = Array.from(new Set((monthsRes.data ?? []).map(r => r.month)))
+  const currentProfile = profiles.find(p => p.id === user.id) ?? null
 
   return (
     <DashboardClient
-      currentUserId={user.id}
-      currentProfile={currentProfile ?? null}
-      profiles={profiles ?? []}
-      weekStart={weekStart}
-      weekSubmissions={weekSubmissions ?? []}
-      mtdSubmissions={mtdSubmissions ?? []}
-      myHistory={myHistory ?? []}
-      kpis={kpis ?? []}
-      bonusCalcs={bonusCalcs ?? []}
-      recentNotes={(recentNotes as any[]) ?? []}
-      last8Weeks={last8Weeks}
+      currentProfile={currentProfile}
+      profiles={profiles}
+      submissions={submissions}
+      kpis={kpis}
+      selectedMonth={selectedMonth}
+      monthsWithData={monthsWithData}
     />
   )
 }

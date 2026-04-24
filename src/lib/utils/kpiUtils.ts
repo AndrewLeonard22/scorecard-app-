@@ -1,42 +1,61 @@
-import type { Direction, Unit } from '@/lib/types/database'
+import type { Direction, KpiDefinition, Unit } from '@/lib/types/database'
 
-export function calcAttainmentPct(
-  actual: number,
-  target: number,
-  direction: Direction
-): number {
-  if (!target || target === 0) return 0
-  if (direction === 'higher_is_better') {
-    return Math.min((actual / target) * 100, 150)
+export type KpiStatus = 'green' | 'yellow' | 'red'
+
+export const STATUS_COLORS: Record<KpiStatus, string> = {
+  green: '#16A34A',
+  yellow: '#EAB308',
+  red: '#DC2626',
+}
+
+export function getKpiStatus(
+  value: number | null | undefined,
+  kpi: Pick<KpiDefinition, 'direction' | 'green_threshold' | 'yellow_threshold' | 'target_monthly'>
+): KpiStatus {
+  if (value === null || value === undefined) return 'red'
+
+  const { direction, green_threshold, yellow_threshold, target_monthly } = kpi
+
+  if (direction === 'lower_is_better') {
+    const greenMax = green_threshold ?? target_monthly
+    const yellowMax = yellow_threshold
+    if (greenMax !== null && value <= greenMax) return 'green'
+    if (yellowMax !== null && value <= yellowMax) return 'yellow'
+    return 'red'
   } else {
-    if (actual === 0) return 150
-    return Math.min((target / actual) * 100, 150)
+    // higher_is_better
+    const greenMin = green_threshold ?? target_monthly
+    const yellowMin = yellow_threshold
+    if (greenMin !== null && value >= greenMin) return 'green'
+    if (yellowMin !== null && value >= yellowMin) return 'yellow'
+    return 'red'
   }
 }
 
-export function getAttainmentColor(pct: number): string {
-  if (pct >= 100) return 'text-emerald-400'
-  if (pct >= 70) return 'text-yellow-400'
-  return 'text-red-400'
+export function getAttainmentPct(
+  value: number | null | undefined,
+  target: number | null | undefined,
+  direction: Direction
+): number {
+  if (value === null || value === undefined || target === null || target === undefined || target === 0) return 0
+  if (direction === 'higher_is_better') {
+    return Math.min(value / target, 1)
+  } else {
+    if (value === 0) return 1
+    return Math.min(target / value, 1)
+  }
 }
 
-export function getAttainmentBgColor(pct: number): string {
-  if (pct >= 100) return 'bg-emerald-500'
-  if (pct >= 70) return 'bg-yellow-500'
-  return 'bg-red-500'
-}
-
-export function getInputBorderColor(pct: number | null): string {
-  if (pct === null) return ''
-  if (pct >= 100) return 'border-emerald-500 focus-visible:ring-emerald-500'
-  if (pct >= 70) return 'border-yellow-500 focus-visible:ring-yellow-500'
-  return 'border-red-500 focus-visible:ring-red-500'
-}
-
-export function formatValue(value: number, unit: Unit): string {
+export function formatValue(value: number | null | undefined, unit: Unit): string {
+  if (value === null || value === undefined) return '—'
   switch (unit) {
     case 'currency':
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value)
     case 'percent':
       return `${value.toFixed(1)}%`
     case 'duration_days':
@@ -46,7 +65,19 @@ export function formatValue(value: number, unit: Unit): string {
   }
 }
 
-export function formatTarget(target: number | null, unit: Unit): string {
-  if (target === null || target === 0) return 'No target set'
-  return formatValue(target, unit)
+export function formatTarget(target: number | null, unit: Unit, direction?: Direction): string {
+  if (target === null || target === 0) return 'No target'
+  const formatted = formatValue(target, unit)
+  if (direction === 'lower_is_better') return `≤${formatted}`
+  if (direction === 'higher_is_better') return `≥${formatted}`
+  return formatted
+}
+
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
 }

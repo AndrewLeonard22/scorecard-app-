@@ -1,54 +1,103 @@
-import type { KpiDefinition, SubmissionValue, Profile, BonusBreakdown } from '@/lib/types/database'
+import type { BonusRate, CsmData, CsrData } from '@/lib/types/database'
+import { getDaysElapsed } from './monthUtils'
 
-export interface WeekBonusResult {
-  week_attainment: number
-  week_earned: number
-  breakdown: BonusBreakdown
+export interface BonusLineItem {
+  key: string
+  label: string
+  count: string
+  rateDisplay: string
+  total: number
 }
 
-export function calcWeekBonus(
-  profile: Pick<Profile, 'weekly_bonus_target' | 'ramp_end_date'>,
-  kpis: KpiDefinition[],
-  values: SubmissionValue[],
-  today: Date = new Date()
-): WeekBonusResult {
-  const valueMap = Object.fromEntries(values.map(v => [v.kpi_id, v.value]))
-  const scoredKpis = kpis.filter(k => k.weight > 0 && k.target_weekly && k.target_weekly > 0)
+export function calcCsmBonus(
+  data: CsmData,
+  rates: BonusRate[],
+  month: string
+): BonusLineItem[] {
+  const activeRates = rates.filter(r => r.active && r.role === 'csm')
+  const items: BonusLineItem[] = []
 
-  const breakdown: BonusBreakdown = {}
-  let week_attainment = 0
-
-  for (const kpi of scoredKpis) {
-    const actual = valueMap[kpi.id] ?? 0
-    const target = kpi.target_weekly!
-
-    let attainment: number
-    if (kpi.direction === 'higher_is_better') {
-      attainment = Math.min(actual / target, 1.5)
+  for (const rate of activeRates) {
+    if (rate.key === 'ad_spend_upsell') {
+      const perDay = data.ad_spend_upsell_per_day ?? 0
+      const days = getDaysElapsed(month)
+      const totalIncrease = perDay * days
+      const earned = totalIncrease * (rate.rate_value / 100)
+      items.push({
+        key: rate.key,
+        label: rate.label,
+        count: `$${perDay.toLocaleString()}/day × ${days} days`,
+        rateDisplay: `${rate.rate_value}%`,
+        total: earned,
+      })
+    } else if (rate.key === 'contract_extension_value') {
+      const value = data.contract_extension_value ?? 0
+      const earned = value * (rate.rate_value / 100)
+      items.push({
+        key: rate.key,
+        label: rate.label,
+        count: `$${value.toLocaleString()} contract value`,
+        rateDisplay: `${rate.rate_value}%`,
+        total: earned,
+      })
     } else {
-      attainment = actual > 0 ? Math.min(target / actual, 1.5) : 1.5
-    }
-
-    const weighted = attainment * kpi.weight
-    week_attainment += weighted
-
-    breakdown[kpi.key] = {
-      actual,
-      target,
-      attainment_pct: attainment * 100,
-      weighted_contribution: weighted,
+      const fieldMap: Record<string, keyof CsmData> = {
+        websites_sold: 'websites_sold',
+        reviews_collected: 'reviews_collected',
+        video_interviews: 'video_interviews',
+        closed_referrals: 'closed_referrals',
+      }
+      const field = fieldMap[rate.key]
+      if (!field) continue
+      const count = (data[field] as number | null | undefined) ?? 0
+      items.push({
+        key: rate.key,
+        label: rate.label,
+        count: String(count),
+        rateDisplay: `× $${rate.rate_value.toLocaleString()}`,
+        total: count * rate.rate_value,
+      })
     }
   }
 
-  const bonusTarget = profile.weekly_bonus_target ?? 0
-  const inRamp = profile.ramp_end_date ? today <= new Date(profile.ramp_end_date) : false
+  return items
+}
 
-  let week_earned: number
-  if (week_attainment < 0.7 && !inRamp) {
-    week_earned = bonusTarget * week_attainment * 0.5
-  } else {
-    week_earned = bonusTarget * week_attainment
+export function calcCsrBonus(
+  data: CsrData,
+  rates: BonusRate[]
+): BonusLineItem[] {
+  const activeRates = rates.filter(r => r.active && r.role === 'csr')
+  const items: BonusLineItem[] = []
+
+  for (const rate of activeRates) {
+    if (rate.key === 'shows_completed') {
+      const count = data.shows_completed ?? 0
+      items.push({
+        key: rate.key,
+        label: rate.label,
+        count: String(count),
+        rateDisplay: `× $${rate.rate_value.toLocaleString()}`,
+        total: count * rate.rate_value,
+      })
+    }
   }
 
-  return { week_attainment, week_earned, breakdown }
+  return items
+}
+
+export function sumBonus(items: BonusLineItem[]): number {
+  return items.reduce((sum, item) => sum + item.total, 0)
+}
+
+export function calcAdSpendPreview(
+  perDay: number | null | undefined,
+  ratePct: number,
+  month: string
+): { days: number; totalIncrease: number; earned: number } | null {
+  if (!perDay) return null
+  const days = getDaysElapsed(month)
+  const totalIncrease = perDay * days
+  const earned = totalIncrease * (ratePct / 100)
+  return { days, totalIncrease, earned }
 }

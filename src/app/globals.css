@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -31,48 +29,29 @@
 }
 
 :root {
-  --background: hsl(210, 40%, 98%);
-  --foreground: hsl(215, 25%, 27%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(215, 25%, 27%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(215, 25%, 27%);
-  --primary: hsl(160, 84%, 39%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(210, 40%, 96%);
-  --secondary-foreground: hsl(215, 25%, 27%);
-  --muted: hsl(210, 40%, 96%);
-  --muted-foreground: hsl(215, 16%, 47%);
-  --accent: hsl(160, 84%, 39%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --border: hsl(214, 32%, 91%);
-  --input: hsl(214, 32%, 91%);
-  --ring: hsl(160, 84%, 39%);
+  --background: #ffffff;
+  --foreground: #0e0e0e;
+  --card: #ffffff;
+  --card-foreground: #0e0e0e;
+  --popover: #ffffff;
+  --popover-foreground: #0e0e0e;
+  --primary: #1fa6f5;
+  --primary-foreground: #ffffff;
+  --secondary: #fafafa;
+  --secondary-foreground: #0e0e0e;
+  --muted: #fafafa;
+  --muted-foreground: #6b6b6b;
+  --accent: #1fa6f5;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e8e8e8;
+  --input: #e8e8e8;
+  --ring: #1fa6f5;
   --radius: 0.5rem;
-}
-
-.dark {
-  --background: hsl(222, 47%, 11%);
-  --foreground: hsl(210, 40%, 98%);
-  --card: hsl(217, 33%, 17%);
-  --card-foreground: hsl(210, 40%, 98%);
-  --popover: hsl(217, 33%, 17%);
-  --popover-foreground: hsl(210, 40%, 98%);
-  --primary: hsl(160, 84%, 39%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(217, 33%, 22%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --muted: hsl(217, 33%, 22%);
-  --muted-foreground: hsl(215, 20%, 65%);
-  --accent: hsl(160, 84%, 39%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --border: hsl(217, 33%, 25%);
-  --input: hsl(217, 33%, 25%);
-  --ring: hsl(160, 84%, 39%);
+  --status-green: #16a34a;
+  --status-yellow: #eab308;
+  --status-red: #dc2626;
 }
 
 @layer base {
@@ -81,5 +60,11 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
