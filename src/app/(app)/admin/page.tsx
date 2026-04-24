@@ -19,10 +19,6 @@ export default async function AdminPage() {
       <div className="min-h-screen bg-white">
         <AppNav fullName={adminProfile.full_name} role="admin" />
         <main className="max-w-5xl mx-auto px-6 py-8">
-          <div className="mb-6">
-            <h1 className="text-[22px] font-semibold text-[#0E0E0E]">Admin Panel</h1>
-            <p className="text-[14px] text-[#6B6B6B] mt-0.5">Manage KPI targets, bonus rates, and team members</p>
-          </div>
           <AdminClient
             currentUserId={adminProfile.id}
             profiles={MOCK_PROFILES}
@@ -54,15 +50,8 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <AppNav
-        fullName={profile?.full_name ?? ''}
-        role="admin"
-      />
+      <AppNav fullName={profile?.full_name ?? ''} role="admin" />
       <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-[22px] font-semibold text-[#0E0E0E]">Admin Panel</h1>
-          <p className="text-[14px] text-[#6B6B6B] mt-0.5">Manage KPI targets, bonus rates, and team members</p>
-        </div>
         <AdminClient
           currentUserId={user.id}
           profiles={profilesRes.data ?? []}

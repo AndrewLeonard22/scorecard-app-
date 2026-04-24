@@ -56,7 +56,7 @@ export function LoginForm() {
       .eq('id', authData.user.id)
       .single()
 
-    router.push(profile?.role === 'admin' ? '/dashboard' : '/me')
+    router.push(profile?.role === 'admin' ? '/admin' : '/me')
     router.refresh()
   }
 

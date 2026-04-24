@@ -8,9 +8,9 @@ import { TeamMembersTab } from './TeamMembersTab'
 import type { Profile, KpiDefinition, BonusRate } from '@/lib/types/database'
 
 const TABS = [
+  { id: 'team-members', label: 'Team Members' },
   { id: 'kpi-targets', label: 'KPI Targets' },
   { id: 'bonus-rates', label: 'Bonus Rates' },
-  { id: 'team-members', label: 'Team Members' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -23,7 +23,7 @@ interface AdminClientProps {
 }
 
 export function AdminClient({ currentUserId, profiles, kpis, bonusRates }: AdminClientProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('kpi-targets')
+  const [activeTab, setActiveTab] = useState<TabId>('team-members')
 
   return (
     <div>
