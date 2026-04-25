@@ -14,7 +14,7 @@ export function HeadlineCard({ label, value, context, status, className }: Headl
   return (
     <div
       className={cn(
-        'relative bg-white border border-[#E8E8E8] rounded-xl p-4',
+        'relative bg-white border border-[#E8E8E8] rounded-xl p-5',
         className
       )}
     >

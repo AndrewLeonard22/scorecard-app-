@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { AppNav } from '@/components/nav/AppNav'
@@ -47,7 +47,7 @@ export function PersonalScorecard({
   monthsWithData,
   csmLaunchDays,
 }: PersonalScorecardProps) {
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
   const [data, setData] = useState<Record<string, number | null>>(
     (submission?.data ?? {}) as Record<string, number | null>
   )
@@ -57,13 +57,19 @@ export function PersonalScorecard({
 
   const isReadOnly = locked || !isCurrentMonth(selectedMonth)
 
+  // Refs so save callbacks never need to re-create when data/notes change
+  const dataRef = useRef(data)
+  dataRef.current = data
+  const notesRef = useRef(notes)
+  notesRef.current = notes
+
   const handleChange = useCallback((key: string, value: number | null) => {
     setData(prev => ({ ...prev, [key]: value }))
   }, [])
 
   const handleSave = useCallback(async (key: string, value: number | null) => {
     if (PREVIEW) return
-    const newData = { ...data, [key]: value }
+    const newData = { ...dataRef.current, [key]: value }
     const { error } = await supabase
       .from('monthly_submissions')
       .upsert(
@@ -80,7 +86,7 @@ export function PersonalScorecard({
       throw error
     }
     setLastSavedAt(new Date().toISOString())
-  }, [data, profile.id, selectedMonth, supabase])
+  }, [profile.id, selectedMonth, supabase])
 
   const handleNotesSave = useCallback(async () => {
     if (PREVIEW) return
@@ -90,15 +96,15 @@ export function PersonalScorecard({
         {
           user_id: profile.id,
           month: selectedMonth,
-          data: data,
-          notes,
+          data: dataRef.current,
+          notes: notesRef.current,
           last_saved_at: new Date().toISOString(),
         },
         { onConflict: 'user_id,month' }
       )
     if (error) toast.error('Failed to save')
     else setLastSavedAt(new Date().toISOString())
-  }, [data, notes, profile.id, selectedMonth, supabase])
+  }, [profile.id, selectedMonth, supabase])
 
   const firstName = profile.full_name.split(' ')[0]
   const monthLabel = getMonthLabel(selectedMonth)
@@ -123,15 +129,12 @@ export function PersonalScorecard({
         )}
 
         {/* Hero */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="text-[22px] font-semibold text-[#0E0E0E]">
-              {firstName}&apos;s {monthLabel} Scorecard
-            </h1>
-            <p className="text-[14px] text-[#6B6B6B] mt-0.5">Earned so far this month</p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-[22px] font-semibold text-[#0E0E0E]">
+            {firstName}&apos;s {monthLabel} Scorecard
+          </h1>
           {lastSavedAt && (
-            <p className="text-[12px] text-[#9B9B9B] mt-1">
+            <p className="text-[13px] text-[#9B9B9B] mt-1">
               Updated {formatRelativeTime(lastSavedAt)}
             </p>
           )}
@@ -209,31 +212,40 @@ function CsmScorecard({
   onNotesSave: () => Promise<void>
   onNotesChange: (v: string) => void
 }) {
-  const bonusItems = calcCsmBonus(data, bonusRates, selectedMonth)
-  const total = sumBonus(bonusItems)
+  const bonusItems = useMemo(
+    () => calcCsmBonus(data, bonusRates, selectedMonth),
+    [data, bonusRates, selectedMonth]
+  )
+  const total = useMemo(() => sumBonus(bonusItems), [bonusItems])
 
-  const churnRate = data.clients_active_start && data.clients_lost != null
-    ? (data.clients_lost / data.clients_active_start) * 100
-    : null
+  const churnRate = useMemo(() =>
+    data.clients_active_start && data.clients_lost != null
+      ? (data.clients_lost / data.clients_active_start) * 100
+      : null,
+    [data.clients_active_start, data.clients_lost]
+  )
 
-  const churnKpi = kpis.find(k => k.key === 'churn_rate')
-  const launchKpi = kpis.find(k => k.key === 'onboarding_to_launch_days')
+  const churnKpi = useMemo(() => kpis.find(k => k.key === 'churn_rate'), [kpis])
+  const launchKpi = useMemo(() => kpis.find(k => k.key === 'onboarding_to_launch_days'), [kpis])
 
-  const adSpendRate = bonusRates.find(r => r.key === 'ad_spend_upsell')
-  const adSpendPreview = adSpendRate
-    ? calcAdSpendPreview(data.ad_spend_upsell_per_day, adSpendRate.rate_value, selectedMonth)
-    : null
+  const adSpendRate = useMemo(() => bonusRates.find(r => r.key === 'ad_spend_upsell'), [bonusRates])
+  const adSpendPreview = useMemo(() =>
+    adSpendRate
+      ? calcAdSpendPreview(data.ad_spend_upsell_per_day, adSpendRate.rate_value, selectedMonth)
+      : null,
+    [adSpendRate, data.ad_spend_upsell_per_day, selectedMonth]
+  )
 
   return (
     <div className="space-y-8">
       {/* Bonus total */}
-      <div className="flex items-start justify-between p-5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8]">
-        <div />
-        <div className="text-right">
-          <p className="text-[36px] font-semibold tabular-nums text-[#1FA6F5] leading-none">
-            {formatCurrency(total)}
-          </p>
-        </div>
+      <div className="p-5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8] text-center">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-[#6B6B6B] mb-2">
+          Earned this month
+        </p>
+        <p className="text-[36px] font-semibold tabular-nums text-[#1FA6F5] leading-none">
+          {formatCurrency(total)}
+        </p>
       </div>
 
       {/* Bonus breakdown */}
@@ -595,18 +607,20 @@ function CsrScorecard({
   onNotesSave: () => Promise<void>
   onNotesChange: (v: string) => void
 }) {
-  const bonusItems = calcCsrBonus(data, bonusRates)
-  const total = sumBonus(bonusItems)
+  const bonusItems = useMemo(() => calcCsrBonus(data, bonusRates), [data, bonusRates])
+  const total = useMemo(() => sumBonus(bonusItems), [bonusItems])
 
-  const dialsKpi = kpis.find(k => k.key === 'dials')
-  const conversationsKpi = kpis.find(k => k.key === 'conversations')
-  const appointmentsKpi = kpis.find(k => k.key === 'appointments_booked')
+  const dialsKpi = useMemo(() => kpis.find(k => k.key === 'dials'), [kpis])
+  const conversationsKpi = useMemo(() => kpis.find(k => k.key === 'conversations'), [kpis])
+  const appointmentsKpi = useMemo(() => kpis.find(k => k.key === 'appointments_booked'), [kpis])
 
   return (
     <div className="space-y-8">
       {/* Bonus total */}
-      <div className="flex items-start justify-between p-5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8]">
-        <div />
+      <div className="p-5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8] text-center">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-[#6B6B6B] mb-2">
+          Earned this month
+        </p>
         <p className="text-[36px] font-semibold tabular-nums text-[#1FA6F5] leading-none">
           {formatCurrency(total)}
         </p>

@@ -56,8 +56,7 @@ export function RoleCard({ profile, kpis, lastSavedAt, className }: RoleCardProp
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-1.5">
-          {/* On track badge */}
+        <div className="flex flex-col items-end gap-1.5 pt-0.5">
           <span
             className={cn(
               'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium',
@@ -68,18 +67,13 @@ export function RoleCard({ profile, kpis, lastSavedAt, className }: RoleCardProp
           >
             {onTrack}/{statuses.length} on track
           </span>
+          {lastSavedAt !== undefined && stalenessLabel && (
+            <p className="text-[11px]" style={{ color: stalenessColor ?? '#9B9B9B' }}>
+              {stalenessLabel}
+            </p>
+          )}
         </div>
       </div>
-
-      {/* Stale timestamp */}
-      {lastSavedAt !== undefined && (
-        <p
-          className="text-[11px] mb-4 -mt-3"
-          style={{ color: stalenessColor ?? '#9B9B9B' }}
-        >
-          {stalenessLabel}
-        </p>
-      )}
 
       {/* KPI rows */}
       <div className="space-y-[14px]">

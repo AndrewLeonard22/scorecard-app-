@@ -19,9 +19,12 @@ export async function POST(req: Request) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
   const { data, error } = await serviceClient.auth.admin.inviteUserByEmail(email, {
     data: { full_name: name, role },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/me`,
+    redirectTo: `${appUrl}/me`,
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

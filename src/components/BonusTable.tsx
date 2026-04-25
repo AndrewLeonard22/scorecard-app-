@@ -23,8 +23,8 @@ export function BonusTable({ items, total, footnote, className }: BonusTableProp
       <table className="w-full">
         <colgroup>
           <col className="w-auto" />
-          <col className="w-[200px]" />
           <col className="w-[80px]" />
+          <col className="w-[110px]" />
           <col className="w-[100px]" />
         </colgroup>
         <thead>

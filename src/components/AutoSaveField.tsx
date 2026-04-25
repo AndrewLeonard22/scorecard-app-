@@ -87,6 +87,7 @@ export function AutoSaveField({
       <div className="flex items-center gap-0">
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => handleStep(-1)}
           disabled={disabled}
           className={cn(
@@ -101,7 +102,7 @@ export function AutoSaveField({
         </button>
 
         <input
-          type={unit === 'currency' ? 'number' : 'number'}
+          type="number"
           value={displayValue}
           onChange={e => handleChange(e.target.value)}
           onBlur={handleBlur}
@@ -122,6 +123,7 @@ export function AutoSaveField({
 
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => handleStep(1)}
           disabled={disabled}
           className={cn(

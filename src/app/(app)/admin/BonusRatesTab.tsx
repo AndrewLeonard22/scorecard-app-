@@ -67,36 +67,13 @@ export function BonusRatesTab({ bonusRates: initialRates }: BonusRatesTabProps) 
     }
   }
 
-  if (selectedRole === 'media_buyer') {
-    return (
-      <div className="space-y-4">
-        <div className="flex gap-2">
-          {ROLES.map(r => (
-            <button key={r.value} onClick={() => setSelectedRole(r.value)}
-              className={cn(
-                'px-4 py-1.5 rounded-lg text-[13px] font-medium border transition-colors',
-                selectedRole === r.value
-                  ? 'bg-[#1FA6F5] text-white border-[#1FA6F5]'
-                  : 'bg-white text-[#6B6B6B] border-[#E8E8E8] hover:text-[#0E0E0E]'
-              )}
-            >{r.label}</button>
-          ))}
-        </div>
-        <div className="border border-[#E8E8E8] rounded-xl p-8 text-center">
-          <p className="text-[15px] font-medium text-[#0E0E0E]">Not yet configured</p>
-          <p className="text-[13px] text-[#9B9B9B] mt-1">Bonus structure for Media Buyer is pending.</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
         {ROLES.map(r => (
           <button key={r.value} onClick={() => setSelectedRole(r.value as Role)}
             className={cn(
-              'px-4 py-1.5 rounded-lg text-[13px] font-medium border transition-colors',
+              'px-3.5 py-1.5 rounded-lg text-[13px] font-medium border transition-colors',
               selectedRole === r.value
                 ? 'bg-[#1FA6F5] text-white border-[#1FA6F5]'
                 : 'bg-white text-[#6B6B6B] border-[#E8E8E8] hover:text-[#0E0E0E]'
@@ -105,6 +82,12 @@ export function BonusRatesTab({ bonusRates: initialRates }: BonusRatesTabProps) 
         ))}
       </div>
 
+      {selectedRole === 'media_buyer' ? (
+        <div className="border border-[#E8E8E8] rounded-xl p-8 text-center">
+          <p className="text-[15px] font-medium text-[#0E0E0E]">Not yet configured</p>
+          <p className="text-[13px] text-[#9B9B9B] mt-1">Bonus structure for Media Buyer is pending.</p>
+        </div>
+      ) : (
       <div className="border border-[#E8E8E8] rounded-xl overflow-hidden">
         <table className="w-full">
           <thead>
@@ -182,6 +165,7 @@ export function BonusRatesTab({ bonusRates: initialRates }: BonusRatesTabProps) 
           </tbody>
         </table>
       </div>
+      )}
     </div>
   )
 }

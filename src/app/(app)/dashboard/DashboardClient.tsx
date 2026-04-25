@@ -109,19 +109,17 @@ export function DashboardClient({
       />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Historical badge */}
-        {isHistorical && (
-          <div className="mb-6 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-[#1FA6F5] text-[12px] font-medium">
-              Viewing {getMonthLabel(selectedMonth)} · Historical
-            </span>
-          </div>
-        )}
-
         {/* Page title */}
         <div className="mb-8">
-          <h1 className="text-[22px] font-semibold text-[#0E0E0E]">Team Scorecard</h1>
-          <p className="text-[14px] text-[#6B6B6B] mt-0.5">{getMonthLabel(selectedMonth)}</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[22px] font-semibold text-[#0E0E0E]">Team Scorecard</h1>
+            {isHistorical && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#EBF6FE] text-[#1FA6F5] text-[12px] font-medium">
+                Historical
+              </span>
+            )}
+          </div>
+          <p className="text-[14px] text-[#6B6B6B] mt-1">{getMonthLabel(selectedMonth)}</p>
         </div>
 
         {/* Headline strip */}

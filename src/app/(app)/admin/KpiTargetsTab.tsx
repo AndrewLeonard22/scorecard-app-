@@ -87,7 +87,7 @@ export function KpiTargetsTab({ kpis: initialKpis }: KpiTargetsTabProps) {
           </colgroup>
           <thead>
             <tr className="bg-[#FAFAFA] border-b border-[#E8E8E8]">
-              <th className="text-left px-5 py-3 text-[11px] font-medium text-[#9B9B9B] uppercase tracking-wide">KPI</th>
+              <th className="text-left px-4 py-3 text-[11px] font-medium text-[#9B9B9B] uppercase tracking-wide">KPI</th>
               <th className="text-left px-3 py-3 text-[11px] font-medium text-[#9B9B9B] uppercase tracking-wide">Target</th>
               <th className="text-left px-3 py-3 text-[11px] font-medium text-[#9B9B9B] uppercase tracking-wide">Green</th>
               <th className="text-left px-3 py-3 text-[11px] font-medium text-[#9B9B9B] uppercase tracking-wide">Yellow</th>
@@ -104,7 +104,7 @@ export function KpiTargetsTab({ kpis: initialKpis }: KpiTargetsTabProps) {
             )}
             {filtered.map(kpi => (
               <tr key={kpi.id} className="hover:bg-[#FAFAFA]/60 transition-colors">
-                <td className="px-5 py-3.5">
+                <td className="px-4 py-3.5">
                   <p className="text-[14px] font-medium text-[#0E0E0E] leading-tight">{kpi.label}</p>
                   <p className="text-[11px] text-[#9B9B9B] mt-0.5">
                     {kpi.direction === 'lower_is_better' ? '↓ lower is better' : '↑ higher is better'}
