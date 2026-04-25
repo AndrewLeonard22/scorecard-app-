@@ -3,7 +3,6 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { AppNav } from '@/components/nav/AppNav'
 import { BonusTable } from '@/components/BonusTable'
 import { AutoSaveField } from '@/components/AutoSaveField'
 import { StatusDot } from '@/components/StatusDot'
@@ -32,7 +31,6 @@ interface PersonalScorecardProps {
   bonusRates: BonusRate[]
   kpis: KpiDefinition[]
   selectedMonth: string
-  monthsWithData: string[]
   csmLaunchDays?: number | null
 }
 
@@ -44,7 +42,6 @@ export function PersonalScorecard({
   bonusRates,
   kpis,
   selectedMonth,
-  monthsWithData,
   csmLaunchDays,
 }: PersonalScorecardProps) {
   const supabase = useRef(createClient()).current
@@ -110,14 +107,7 @@ export function PersonalScorecard({
   const monthLabel = getMonthLabel(selectedMonth)
 
   return (
-    <div className="min-h-screen bg-white">
-      <AppNav
-        fullName={profile.full_name}
-        role={profile.role}
-        monthsWithData={monthsWithData}
-      />
-
-      <main className="max-w-3xl mx-auto px-6 py-8">
+    <main className="max-w-3xl mx-auto px-6 py-8">
         {/* Locked banner */}
         {isReadOnly && (
           <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-[#FAFAFA] border border-[#E8E8E8] rounded-lg">
@@ -182,8 +172,7 @@ export function PersonalScorecard({
             onNotesChange={setNotes}
           />
         )}
-      </main>
-    </div>
+    </main>
   )
 }
 

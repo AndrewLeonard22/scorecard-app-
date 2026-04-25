@@ -1,6 +1,5 @@
 'use client'
 
-import { AppNav } from '@/components/nav/AppNav'
 import { HeadlineCard } from '@/components/HeadlineCard'
 import { RoleCard } from '@/components/RoleCard'
 import { getKpiStatus } from '@/lib/utils/kpiUtils'
@@ -8,21 +7,17 @@ import { getMonthLabel, isCurrentMonth } from '@/lib/utils/monthUtils'
 import type { Profile, KpiDefinition, MonthlySubmission, CsmData, MediaBuyerData, CsrData } from '@/lib/types/database'
 
 interface DashboardClientProps {
-  currentProfile: Profile | null
   profiles: Profile[]
   submissions: MonthlySubmission[]
   kpis: KpiDefinition[]
   selectedMonth: string
-  monthsWithData: string[]
 }
 
 export function DashboardClient({
-  currentProfile,
   profiles,
   submissions,
   kpis,
   selectedMonth,
-  monthsWithData,
 }: DashboardClientProps) {
   function getSubmission(userId: string): MonthlySubmission | null {
     return submissions.find(s => s.user_id === userId) ?? null
@@ -101,14 +96,7 @@ export function DashboardClient({
   ].filter(Boolean) as Array<{ kpi: KpiDefinition; value: number | null | undefined; targetLabel?: string }>
 
   return (
-    <div className="min-h-screen bg-white">
-      <AppNav
-        fullName={currentProfile?.full_name ?? ''}
-        role={currentProfile?.role ?? 'csr'}
-        monthsWithData={monthsWithData}
-      />
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
+    <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Page title */}
         <div className="mb-8">
           <div className="flex items-center gap-3">
@@ -185,7 +173,6 @@ export function DashboardClient({
         <p className="text-center text-[12px] text-[#9B9B9B] mt-10">
           Bonus amounts are visible on your personal scorecard.
         </p>
-      </main>
-    </div>
+    </main>
   )
 }

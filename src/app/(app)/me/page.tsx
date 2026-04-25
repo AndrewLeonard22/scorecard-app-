@@ -39,7 +39,6 @@ export default async function MePage({
         bonusRates={bonusRates}
         kpis={kpis}
         selectedMonth={selectedMonth}
-        monthsWithData={['2026-04', '2026-03', '2026-02']}
         csmLaunchDays={csmLaunchDays}
       />
     )
@@ -58,7 +57,7 @@ export default async function MePage({
   if (!profile) redirect('/login')
   if (profile.role === 'admin') redirect('/admin')
 
-  const [submissionRes, bonusRatesRes, kpisRes, monthsRes] = await Promise.all([
+  const [submissionRes, bonusRatesRes, kpisRes] = await Promise.all([
     supabase
       .from('monthly_submissions')
       .select('*')
@@ -67,7 +66,6 @@ export default async function MePage({
       .maybeSingle(),
     supabase.from('bonus_rates').select('*').eq('role', profile.role).order('display_order'),
     supabase.from('kpi_definitions').select('*').eq('role', profile.role).eq('active', true).order('display_order'),
-    supabase.from('monthly_submissions').select('month').eq('user_id', user.id),
   ])
 
   let csmLaunchDays: number | null = null
@@ -92,8 +90,6 @@ export default async function MePage({
     }
   }
 
-  const monthsWithData = Array.from(new Set((monthsRes.data ?? []).map(r => r.month)))
-
   return (
     <PersonalScorecard
       profile={profile}
@@ -101,7 +97,6 @@ export default async function MePage({
       bonusRates={bonusRatesRes.data ?? []}
       kpis={kpisRes.data ?? []}
       selectedMonth={selectedMonth}
-      monthsWithData={monthsWithData}
       csmLaunchDays={csmLaunchDays}
     />
   )

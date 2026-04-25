@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AdminClient } from './AdminClient'
-import { AppNav } from '@/components/nav/AppNav'
 import {
   MOCK_PROFILES,
   MOCK_KPI_DEFINITIONS,
@@ -16,17 +15,14 @@ export default async function AdminPage() {
   if (PREVIEW) {
     const adminProfile = MOCK_PROFILES.find(p => p.role === 'admin')!
     return (
-      <div className="min-h-screen bg-white">
-        <AppNav fullName={adminProfile.full_name} role="admin" />
-        <main className="max-w-5xl mx-auto px-6 py-8">
-          <AdminClient
-            currentUserId={adminProfile.id}
-            profiles={MOCK_PROFILES}
-            kpis={MOCK_KPI_DEFINITIONS}
-            bonusRates={MOCK_BONUS_RATES}
-          />
-        </main>
-      </div>
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <AdminClient
+          currentUserId={adminProfile.id}
+          profiles={MOCK_PROFILES}
+          kpis={MOCK_KPI_DEFINITIONS}
+          bonusRates={MOCK_BONUS_RATES}
+        />
+      </main>
     )
   }
 
@@ -49,16 +45,13 @@ export default async function AdminPage() {
   ])
 
   return (
-    <div className="min-h-screen bg-white">
-      <AppNav fullName={profile?.full_name ?? ''} role="admin" />
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        <AdminClient
-          currentUserId={user.id}
-          profiles={profilesRes.data ?? []}
-          kpis={kpisRes.data ?? []}
-          bonusRates={bonusRatesRes.data ?? []}
-        />
-      </main>
-    </div>
+    <main className="max-w-5xl mx-auto px-6 py-8">
+      <AdminClient
+        currentUserId={user.id}
+        profiles={profilesRes.data ?? []}
+        kpis={kpisRes.data ?? []}
+        bonusRates={bonusRatesRes.data ?? []}
+      />
+    </main>
   )
 }
