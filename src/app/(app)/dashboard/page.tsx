@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getAuthUser } from '@/lib/supabase/cached'
 import { DashboardClient } from './DashboardClient'
 import { getCurrentMonth } from '@/lib/utils/monthUtils'
 import {
@@ -31,10 +32,10 @@ export default async function DashboardPage({
     )
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
+  const supabase = await createClient()
   const [profilesRes, submissionsRes, kpisRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('active', true).order('full_name'),
     supabase.from('monthly_submissions').select('*').eq('month', selectedMonth),

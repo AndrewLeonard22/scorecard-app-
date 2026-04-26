@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getAuthProfile } from '@/lib/supabase/cached'
 import { AdminClient } from './AdminClient'
 import {
   MOCK_PROFILES,
@@ -26,18 +27,11 @@ export default async function AdminPage() {
     )
   }
 
+  const profile = await getAuthProfile()
+  if (!profile) redirect('/login')
+  if (profile.role !== 'admin') redirect('/dashboard')
+
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') redirect('/dashboard')
-
   const [profilesRes, kpisRes, bonusRatesRes] = await Promise.all([
     supabase.from('profiles').select('*').order('full_name'),
     supabase.from('kpi_definitions').select('*').order('role').order('display_order'),
@@ -47,7 +41,7 @@ export default async function AdminPage() {
   return (
     <main className="max-w-5xl mx-auto px-6 py-8">
       <AdminClient
-        currentUserId={user.id}
+        currentUserId={profile.id}
         profiles={profilesRes.data ?? []}
         kpis={kpisRes.data ?? []}
         bonusRates={bonusRatesRes.data ?? []}

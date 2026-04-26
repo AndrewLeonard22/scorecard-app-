@@ -21,25 +21,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     )
   }
 
+  // getSession() reads the JWT from the cookie — no network call to Supabase.
+  // Middleware already validated auth server-side before we get here.
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data: { session } } = await supabase.auth.getSession()
 
-  const [profileRes, monthsRes] = await Promise.all([
-    supabase.from('profiles').select('full_name, role').eq('id', user.id).single(),
-    supabase.from('monthly_submissions').select('month').order('month', { ascending: false }),
-  ])
+  if (!session) redirect('/login')
 
-  const profile = profileRes.data
-  const monthsWithData = Array.from(new Set((monthsRes.data ?? []).map(s => s.month)))
+  // full_name and role are stored in user_metadata at invite time.
+  // Avoids a profiles DB query on every navigation just to render the nav.
+  const fullName = (session.user.user_metadata?.full_name ?? session.user.email ?? '') as string
+  const role = (session.user.user_metadata?.role ?? 'csr') as Role
 
   return (
     <div className="min-h-screen bg-white">
-      <AppNav
-        fullName={profile?.full_name ?? ''}
-        role={(profile?.role ?? 'csr') as Role}
-        monthsWithData={monthsWithData}
-      />
+      <AppNav fullName={fullName} role={role} monthsWithData={[]} />
       {children}
     </div>
   )

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getAuthProfile } from '@/lib/supabase/cached'
 import { PersonalScorecard } from './PersonalScorecard'
 import { getCurrentMonth } from '@/lib/utils/monthUtils'
 import {
@@ -44,24 +45,16 @@ export default async function MePage({
     )
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
+  const profile = await getAuthProfile()
   if (!profile) redirect('/login')
   if (profile.role === 'admin') redirect('/admin')
 
+  const supabase = await createClient()
   const [submissionRes, bonusRatesRes, kpisRes] = await Promise.all([
     supabase
       .from('monthly_submissions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', profile.id)
       .eq('month', selectedMonth)
       .maybeSingle(),
     supabase.from('bonus_rates').select('*').eq('role', profile.role).order('display_order'),
