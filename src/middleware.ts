@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Public routes — no auth required
-  const publicPaths = ['/login', '/auth/callback', '/update-password']
+  const publicPaths = ['/login', '/auth/callback', '/update-password', '/accept-invite']
   if (publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) {
     // Logged-in user hitting /login → send them home
     if (user && pathname === '/login') {
