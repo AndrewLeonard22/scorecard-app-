@@ -34,6 +34,12 @@ export function LoginForm() {
     const err = searchParams.get('error')
     if (err === 'link-expired') {
       setBannerError('That invite or reset link has expired. Request a new one below.')
+    } else if (err === 'invalid_invite') {
+      setBannerError('That invite link is invalid. Ask your admin to send a new one.')
+    } else if (err === 'invite_used') {
+      setBannerError('This invite link has already been used. Log in with your password, or reset it below.')
+    } else if (err === 'invite_error') {
+      setBannerError('Something went wrong accepting the invite. Please try again or contact your admin.')
     }
 
     // Handle hash-based errors from Supabase (e.g. old-style links)

@@ -81,24 +81,27 @@ export function PersonalScorecard({
     // Eagerly patch the ref so the next queued save sees this value
     dataRef.current = { ...dataRef.current, [key]: value }
     const snapshot = { ...dataRef.current }
-    saveQueue.current = saveQueue.current.then(async () => {
-      const { error } = await supabase
-        .from('monthly_submissions')
-        .upsert(
-          {
-            user_id: profile.id,
-            month: selectedMonth,
-            data: snapshot,
-            last_saved_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id,month' }
-        )
-      if (error) {
-        toast.error('Failed to save')
-        throw error
-      }
-      setLastSavedAt(new Date().toISOString())
-    })
+    saveQueue.current = saveQueue.current
+      .then(async () => {
+        const { error } = await supabase
+          .from('monthly_submissions')
+          .upsert(
+            {
+              user_id: profile.id,
+              month: selectedMonth,
+              data: snapshot,
+              last_saved_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id,month' }
+          )
+        if (error) {
+          toast.error('Failed to save')
+        } else {
+          setLastSavedAt(new Date().toISOString())
+        }
+      })
+      // Recover the queue on failure so future saves aren't silently dropped
+      .catch(() => {})
     await saveQueue.current
   }, [profile.id, selectedMonth, supabase])
 
