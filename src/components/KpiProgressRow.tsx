@@ -9,6 +9,7 @@ interface KpiProgressRowProps {
   direction: Direction
   status: KpiStatus
   targetLabel?: string
+  attainmentPct?: number // pace-adjusted override
 }
 
 export function KpiProgressRow({
@@ -19,8 +20,9 @@ export function KpiProgressRow({
   direction,
   status,
   targetLabel,
+  attainmentPct: attainmentPctOverride,
 }: KpiProgressRowProps) {
-  const pct = getAttainmentPct(value, target, direction)
+  const pct = attainmentPctOverride !== undefined ? attainmentPctOverride : getAttainmentPct(value, target, direction)
   const fillColor = STATUS_COLORS[status]
   const displayValue = formatValue(value, unit)
   const displayTarget = target !== null && target !== undefined ? formatValue(target, unit) : null

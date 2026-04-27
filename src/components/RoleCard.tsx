@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { KpiProgressRow } from './KpiProgressRow'
-import { getKpiStatus } from '@/lib/utils/kpiUtils'
-import { getStalenessColor, getStalenessLabel } from '@/lib/utils/monthUtils'
+import { getKpiStatusPaced, getAttainmentPctPaced } from '@/lib/utils/kpiUtils'
+import { getDaysElapsed, getDaysInMonth, getStalenessColor, getStalenessLabel } from '@/lib/utils/monthUtils'
 import type { Profile, KpiDefinition } from '@/lib/types/database'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -21,10 +21,14 @@ interface RoleCardProps {
   profile: Profile
   kpis: RoleCardKpi[]
   lastSavedAt: string | null
+  selectedMonth: string
   className?: string
 }
 
-export function RoleCard({ profile, kpis, lastSavedAt, className }: RoleCardProps) {
+export function RoleCard({ profile, kpis, lastSavedAt, selectedMonth, className }: RoleCardProps) {
+  const daysElapsed = getDaysElapsed(selectedMonth)
+  const daysInMonth = getDaysInMonth(selectedMonth)
+
   const initials = profile.full_name
     .split(' ')
     .map(n => n[0])
@@ -32,7 +36,7 @@ export function RoleCard({ profile, kpis, lastSavedAt, className }: RoleCardProp
     .toUpperCase()
     .slice(0, 2)
 
-  const statuses = kpis.map(({ kpi, value }) => getKpiStatus(value, kpi))
+  const statuses = kpis.map(({ kpi, value }) => getKpiStatusPaced(value, kpi, daysElapsed, daysInMonth))
   const onTrack = statuses.filter(s => s === 'green').length
   const allGreen = onTrack === statuses.length
   const stalenessColor = getStalenessColor(lastSavedAt)
@@ -78,7 +82,8 @@ export function RoleCard({ profile, kpis, lastSavedAt, className }: RoleCardProp
       {/* KPI rows */}
       <div className="space-y-[14px]">
         {kpis.map(({ kpi, value, targetLabel }) => {
-          const status = getKpiStatus(value, kpi)
+          const status = getKpiStatusPaced(value, kpi, daysElapsed, daysInMonth)
+          const attainmentPct = getAttainmentPctPaced(value, kpi, daysElapsed, daysInMonth)
           return (
             <KpiProgressRow
               key={kpi.id}
@@ -88,6 +93,7 @@ export function RoleCard({ profile, kpis, lastSavedAt, className }: RoleCardProp
               target={kpi.target_monthly}
               direction={kpi.direction}
               status={status}
+              attainmentPct={attainmentPct}
               targetLabel={targetLabel}
             />
           )
