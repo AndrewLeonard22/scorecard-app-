@@ -331,6 +331,9 @@ function CsmScorecard({
             fieldKey="onboarding_to_launch_days"
             value={data.onboarding_to_launch_days}
             step={0.5}
+            status={launchKpi && data.onboarding_to_launch_days != null
+              ? getKpiStatus(data.onboarding_to_launch_days, launchKpi)
+              : null}
             disabled={isReadOnly}
             onChange={onChange}
             onSave={onSave}
