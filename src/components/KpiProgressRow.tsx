@@ -41,18 +41,16 @@ export function KpiProgressRow({
         </div>
       </div>
 
-      {/* Progress bar — only show when there's an actual value */}
-      {value != null && (
-        <div className="h-[4px] w-full rounded-full overflow-hidden" style={{ backgroundColor: '#F1F1F1' }}>
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${Math.round(pct * 100)}%`,
-              backgroundColor: fillColor,
-            }}
-          />
-        </div>
-      )}
+      {/* Progress bar — always show track; fill reflects actual value */}
+      <div className="h-[4px] w-full rounded-full overflow-hidden" style={{ backgroundColor: '#F1F1F1' }}>
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{
+            width: value != null ? `${Math.round(pct * 100)}%` : '0%',
+            backgroundColor: value != null ? fillColor : 'transparent',
+          }}
+        />
+      </div>
     </div>
   )
 }
