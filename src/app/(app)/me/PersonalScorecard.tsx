@@ -67,29 +67,39 @@ export function PersonalScorecard({
   const notesRef = useRef(notes)
   notesRef.current = notes
 
+  // Save queue — serialises concurrent field saves so they don't overwrite each other.
+  // Without this, two saves in-flight simultaneously each snapshot the full data object
+  // at slightly different times and the slower one wins, dropping the faster one's change.
+  const saveQueue = useRef<Promise<void>>(Promise.resolve())
+
   const handleChange = useCallback((key: string, value: number | null) => {
     setData(prev => ({ ...prev, [key]: value }))
   }, [])
 
   const handleSave = useCallback(async (key: string, value: number | null) => {
     if (PREVIEW) return
-    const newData = { ...dataRef.current, [key]: value }
-    const { error } = await supabase
-      .from('monthly_submissions')
-      .upsert(
-        {
-          user_id: profile.id,
-          month: selectedMonth,
-          data: newData,
-          last_saved_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id,month' }
-      )
-    if (error) {
-      toast.error('Failed to save')
-      throw error
-    }
-    setLastSavedAt(new Date().toISOString())
+    // Eagerly patch the ref so the next queued save sees this value
+    dataRef.current = { ...dataRef.current, [key]: value }
+    const snapshot = { ...dataRef.current }
+    saveQueue.current = saveQueue.current.then(async () => {
+      const { error } = await supabase
+        .from('monthly_submissions')
+        .upsert(
+          {
+            user_id: profile.id,
+            month: selectedMonth,
+            data: snapshot,
+            last_saved_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,month' }
+        )
+      if (error) {
+        toast.error('Failed to save')
+        throw error
+      }
+      setLastSavedAt(new Date().toISOString())
+    })
+    await saveQueue.current
   }, [profile.id, selectedMonth, supabase])
 
   const handleNotesSave = useCallback(async () => {

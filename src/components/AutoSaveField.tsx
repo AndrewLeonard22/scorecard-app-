@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Check, Minus, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StatusDot } from './StatusDot'
@@ -40,6 +40,16 @@ export function AutoSaveField({
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const stepSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Track the latest value set by typing or stepping.
+  // handleBlur reads from this ref so it never saves a stale prop value
+  // (which happens when the blur fires before React re-renders after a step click).
+  const latestValue = useRef<number | null>(value ?? null)
+
+  // Keep the ref in sync when the parent pushes fresh server data (e.g. month change)
+  useEffect(() => {
+    latestValue.current = value ?? null
+  }, [value])
+
   const displayValue = value !== null && value !== undefined ? String(value) : ''
 
   const showSaved = useCallback(() => {
@@ -50,10 +60,13 @@ export function AutoSaveField({
 
   async function handleBlur() {
     if (disabled) return
+    // Cancel any pending stepper save — blur takes over
     if (stepSaveTimer.current) clearTimeout(stepSaveTimer.current)
     setSaving(true)
     try {
-      await onSave(fieldKey, value ?? null)
+      // Use latestValue ref, NOT the value prop — the prop may be stale if blur fires
+      // before React has re-rendered after a stepper click or fast typing.
+      await onSave(fieldKey, latestValue.current)
       showSaved()
     } finally {
       setSaving(false)
@@ -62,23 +75,31 @@ export function AutoSaveField({
 
   function handleChange(raw: string) {
     if (raw === '' || raw === '-') {
+      latestValue.current = null
       onChange(fieldKey, null)
       return
     }
     const num = unit === 'currency' ? parseFloat(raw) : parseInt(raw, 10)
-    if (!isNaN(num)) onChange(fieldKey, num)
+    if (!isNaN(num)) {
+      latestValue.current = num
+      onChange(fieldKey, num)
+    }
   }
 
   function handleStep(dir: 1 | -1) {
     if (disabled) return
-    const current = value ?? 0
+    // Use latestValue.current (not the value prop) so rapid clicks accumulate correctly
+    // even before React has re-rendered with the updated prop.
+    const current = latestValue.current ?? 0
     const next = Math.max(min, current + dir * step)
+    latestValue.current = next
     onChange(fieldKey, next)
+    // Debounced save — captures the final value after rapid clicks
     if (stepSaveTimer.current) clearTimeout(stepSaveTimer.current)
     stepSaveTimer.current = setTimeout(async () => {
       setSaving(true)
       try {
-        await onSave(fieldKey, next)
+        await onSave(fieldKey, latestValue.current)
         showSaved()
       } finally {
         setSaving(false)
