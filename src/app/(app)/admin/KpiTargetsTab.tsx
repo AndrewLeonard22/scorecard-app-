@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -19,10 +19,14 @@ interface KpiTargetsTabProps {
 const PREVIEW = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true'
 
 export function KpiTargetsTab({ kpis: initialKpis }: KpiTargetsTabProps) {
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
   const [selectedRole, setSelectedRole] = useState<Role>('csm')
   const [kpis, setKpis] = useState(initialKpis)
   const [saved, setSaved] = useState<Record<string, boolean>>({})
+
+  // Ref so saveKpi always reads the latest state even when called from a stale closure
+  const kpisRef = useRef(kpis)
+  kpisRef.current = kpis
 
   const filtered = kpis
     .filter(k => k.role === selectedRole)
@@ -32,10 +36,12 @@ export function KpiTargetsTab({ kpis: initialKpis }: KpiTargetsTabProps) {
     setKpis(prev => prev.map(k => k.id === id ? { ...k, [field]: value } : k))
   }
 
-  async function saveKpi(kpi: KpiDefinition) {
+  async function saveKpi(id: string) {
+    const kpi = kpisRef.current.find(k => k.id === id)
+    if (!kpi) return
     if (PREVIEW) {
-      setSaved(prev => ({ ...prev, [kpi.id]: true }))
-      setTimeout(() => setSaved(prev => ({ ...prev, [kpi.id]: false })), 1500)
+      setSaved(prev => ({ ...prev, [id]: true }))
+      setTimeout(() => setSaved(prev => ({ ...prev, [id]: false })), 1500)
       return
     }
     const { error } = await supabase
@@ -45,14 +51,14 @@ export function KpiTargetsTab({ kpis: initialKpis }: KpiTargetsTabProps) {
         green_threshold: kpi.green_threshold,
         yellow_threshold: kpi.yellow_threshold,
       })
-      .eq('id', kpi.id)
+      .eq('id', id)
 
     if (error) {
       toast.error('Failed to save')
       return
     }
-    setSaved(prev => ({ ...prev, [kpi.id]: true }))
-    setTimeout(() => setSaved(prev => ({ ...prev, [kpi.id]: false })), 1500)
+    setSaved(prev => ({ ...prev, [id]: true }))
+    setTimeout(() => setSaved(prev => ({ ...prev, [id]: false })), 1500)
   }
 
   return (
@@ -114,21 +120,21 @@ export function KpiTargetsTab({ kpis: initialKpis }: KpiTargetsTabProps) {
                   <NumberInput
                     value={kpi.target_monthly}
                     onChange={v => updateKpi(kpi.id, 'target_monthly', v)}
-                    onBlur={() => saveKpi(kpi)}
+                    onBlur={() => saveKpi(kpi.id)}
                   />
                 </td>
                 <td className="px-3 py-3.5">
                   <NumberInput
                     value={kpi.green_threshold}
                     onChange={v => updateKpi(kpi.id, 'green_threshold', v)}
-                    onBlur={() => saveKpi(kpi)}
+                    onBlur={() => saveKpi(kpi.id)}
                   />
                 </td>
                 <td className="px-3 py-3.5">
                   <NumberInput
                     value={kpi.yellow_threshold}
                     onChange={v => updateKpi(kpi.id, 'yellow_threshold', v)}
-                    onBlur={() => saveKpi(kpi)}
+                    onBlur={() => saveKpi(kpi.id)}
                   />
                 </td>
                 <td className="px-3 py-3.5 text-right">

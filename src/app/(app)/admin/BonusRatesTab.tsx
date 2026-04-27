@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Check } from 'lucide-react'
@@ -20,11 +20,15 @@ interface BonusRatesTabProps {
 const PREVIEW = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true'
 
 export function BonusRatesTab({ bonusRates: initialRates }: BonusRatesTabProps) {
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
   const [selectedRole, setSelectedRole] = useState<Role>('csm')
   const [rates, setRates] = useState(initialRates)
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [saved, setSaved] = useState<Record<string, boolean>>({})
+
+  // Ref so saveRate always reads the latest state even when called from a stale closure
+  const ratesRef = useRef(rates)
+  ratesRef.current = rates
 
   const filtered = rates
     .filter(r => r.role === selectedRole)
@@ -34,23 +38,25 @@ export function BonusRatesTab({ bonusRates: initialRates }: BonusRatesTabProps) 
     setRates(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r))
   }
 
-  async function saveRate(rate: BonusRate) {
-    setSaving(prev => ({ ...prev, [rate.id]: true }))
+  async function saveRate(id: string) {
+    const rate = ratesRef.current.find(r => r.id === id)
+    if (!rate) return
+    setSaving(prev => ({ ...prev, [id]: true }))
     if (PREVIEW) {
-      setSaving(prev => ({ ...prev, [rate.id]: false }))
-      setSaved(prev => ({ ...prev, [rate.id]: true }))
-      setTimeout(() => setSaved(prev => ({ ...prev, [rate.id]: false })), 1500)
+      setSaving(prev => ({ ...prev, [id]: false }))
+      setSaved(prev => ({ ...prev, [id]: true }))
+      setTimeout(() => setSaved(prev => ({ ...prev, [id]: false })), 1500)
       return
     }
     const { error } = await supabase
       .from('bonus_rates')
       .update({ rate_value: rate.rate_value, active: rate.active })
-      .eq('id', rate.id)
+      .eq('id', id)
 
-    setSaving(prev => ({ ...prev, [rate.id]: false }))
+    setSaving(prev => ({ ...prev, [id]: false }))
     if (error) { toast.error('Failed to save'); return }
-    setSaved(prev => ({ ...prev, [rate.id]: true }))
-    setTimeout(() => setSaved(prev => ({ ...prev, [rate.id]: false })), 1500)
+    setSaved(prev => ({ ...prev, [id]: true }))
+    setTimeout(() => setSaved(prev => ({ ...prev, [id]: false })), 1500)
   }
 
   async function toggleActive(rate: BonusRate) {
@@ -148,7 +154,7 @@ export function BonusRatesTab({ bonusRates: initialRates }: BonusRatesTabProps) 
                 </td>
                 <td className="px-4 py-3">
                   <button
-                    onClick={() => saveRate(rate)}
+                    onClick={() => saveRate(rate.id)}
                     disabled={saving[rate.id]}
                     className={cn(
                       'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium border transition-colors',
