@@ -65,7 +65,7 @@ export function RoleCard({ profile, kpis, lastSavedAt, className }: RoleCardProp
                 : 'bg-yellow-50 text-yellow-700'
             )}
           >
-            {onTrack}/{statuses.length} on track
+            {onTrack}/{statuses.length} KPIs hit
           </span>
           {lastSavedAt !== undefined && stalenessLabel && (
             <p className="text-[11px]" style={{ color: stalenessColor ?? '#9B9B9B' }}>
