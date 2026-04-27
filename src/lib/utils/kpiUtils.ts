@@ -2,64 +2,6 @@ import type { Direction, KpiDefinition, Unit } from '@/lib/types/database'
 
 export type KpiStatus = 'green' | 'yellow' | 'red'
 
-// Pace-projection applies only to cumulative count KPIs (dials, shows, etc.)
-// Rate/average KPIs (CPA, CPL, churn rate, launch days) compare raw values.
-export function isPacedKpi(kpi: Pick<KpiDefinition, 'unit' | 'direction'>): boolean {
-  return kpi.unit === 'number' && kpi.direction === 'higher_is_better'
-}
-
-// Project current value to month-end run rate
-export function getPaceRunRate(value: number, daysElapsed: number, daysInMonth: number): number {
-  if (daysElapsed <= 0) return 0
-  return (value / daysElapsed) * daysInMonth
-}
-
-// Status using pace-projected run rate for cumulative KPIs, raw for everything else.
-// Automatically reflects any threshold changes made in the admin panel.
-export function getKpiStatusPaced(
-  value: number | null | undefined,
-  kpi: Pick<KpiDefinition, 'direction' | 'green_threshold' | 'yellow_threshold' | 'target_monthly' | 'unit'>,
-  daysElapsed: number,
-  daysInMonth: number,
-): KpiStatus {
-  if (value === null || value === undefined) return 'red'
-  if (isPacedKpi(kpi) && daysElapsed > 0 && daysElapsed < daysInMonth) {
-    return getKpiStatus(getPaceRunRate(value, daysElapsed, daysInMonth), kpi)
-  }
-  return getKpiStatus(value, kpi)
-}
-
-// Attainment % for the progress bar, pace-adjusted for cumulative KPIs
-export function getAttainmentPctPaced(
-  value: number | null | undefined,
-  kpi: Pick<KpiDefinition, 'direction' | 'target_monthly' | 'unit'>,
-  daysElapsed: number,
-  daysInMonth: number,
-): number {
-  if (isPacedKpi(kpi) && daysElapsed > 0 && daysElapsed < daysInMonth) {
-    return getAttainmentPct(getPaceRunRate(value ?? 0, daysElapsed, daysInMonth), kpi.target_monthly, kpi.direction)
-  }
-  return getAttainmentPct(value, kpi.target_monthly, kpi.direction)
-}
-
-// Human-readable hint shown under input fields, e.g. "On pace for 2,850 · Target 2,000 (day 2 of 30)"
-// Returns null for non-paced KPIs, historical months, or missing values.
-export function formatPaceHint(
-  value: number | null | undefined,
-  kpi: Pick<KpiDefinition, 'unit' | 'direction' | 'target_monthly'>,
-  daysElapsed: number,
-  daysInMonth: number,
-): string | null {
-  if (!isPacedKpi(kpi) || value === null || value === undefined || daysElapsed <= 0 || daysElapsed >= daysInMonth) {
-    return null
-  }
-  const runRate = Math.round(getPaceRunRate(value, daysElapsed, daysInMonth))
-  const targetStr = kpi.target_monthly !== null
-    ? ` · Target ${kpi.target_monthly.toLocaleString()}`
-    : ''
-  return `On pace for ${runRate.toLocaleString()}${targetStr} (day ${daysElapsed} of ${daysInMonth})`
-}
-
 export const STATUS_COLORS: Record<KpiStatus, string> = {
   green: '#16A34A',
   yellow: '#EAB308',

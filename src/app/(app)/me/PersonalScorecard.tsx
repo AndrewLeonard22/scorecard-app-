@@ -6,13 +6,11 @@ import { toast } from 'sonner'
 import { BonusTable } from '@/components/BonusTable'
 import { AutoSaveField } from '@/components/AutoSaveField'
 import { StatusDot } from '@/components/StatusDot'
-import { formatCurrency, getKpiStatus, getKpiStatusPaced, formatPaceHint } from '@/lib/utils/kpiUtils'
+import { formatCurrency, getKpiStatus } from '@/lib/utils/kpiUtils'
 import {
   getMonthLabel,
   isMonthLocked,
   formatRelativeTime,
-  getDaysElapsed,
-  getDaysInMonth,
 } from '@/lib/utils/monthUtils'
 import { calcCsmBonus, calcCsrBonus, sumBonus, calcAdSpendPreview } from '@/lib/utils/bonusUtils'
 import { Lock } from 'lucide-react'
@@ -159,7 +157,6 @@ export function PersonalScorecard({
             data={data as MediaBuyerData}
             kpis={kpis}
             csmLaunchDays={csmLaunchDays ?? null}
-            selectedMonth={selectedMonth}
             notes={notes}
             isReadOnly={isReadOnly}
             onChange={handleChange}
@@ -174,7 +171,6 @@ export function PersonalScorecard({
             data={data as CsrData}
             kpis={kpis}
             bonusRates={bonusRates}
-            selectedMonth={selectedMonth}
             notes={notes}
             isReadOnly={isReadOnly}
             onChange={handleChange}
@@ -212,9 +208,6 @@ function CsmScorecard({
   onNotesSave: () => Promise<void>
   onNotesChange: (v: string) => void
 }) {
-  const daysElapsed = getDaysElapsed(selectedMonth)
-  const daysInMonth = getDaysInMonth(selectedMonth)
-
   const bonusItems = useMemo(
     () => calcCsmBonus(data, bonusRates, selectedMonth),
     [data, bonusRates, selectedMonth]
@@ -230,7 +223,6 @@ function CsmScorecard({
 
   const churnKpi = useMemo(() => kpis.find(k => k.key === 'churn_rate'), [kpis])
   const launchKpi = useMemo(() => kpis.find(k => k.key === 'onboarding_to_launch_days'), [kpis])
-  const websitesKpi = useMemo(() => kpis.find(k => k.key === 'websites_sold'), [kpis])
 
   const adSpendRate = useMemo(() => bonusRates.find(r => r.key === 'ad_spend_upsell'), [bonusRates])
   const adSpendPreview = useMemo(() =>
@@ -239,11 +231,6 @@ function CsmScorecard({
       : null,
     [adSpendRate, data.ad_spend_upsell_per_day, selectedMonth]
   )
-
-  function paceHint(value: number | null | undefined, kpi: KpiDefinition | undefined) {
-    if (!kpi) return undefined
-    return formatPaceHint(value, kpi, daysElapsed, daysInMonth) ?? undefined
-  }
 
   return (
     <div className="space-y-8">
@@ -274,28 +261,28 @@ function CsmScorecard({
             <div className="p-4 border border-[#E8E8E8] rounded-xl">
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-[#6B6B6B]">Churn Rate</p>
-                {churnRate !== null && (
+                {churnRate !== null && churnKpi && (
                   <StatusDot status={getKpiStatus(churnRate, churnKpi)} />
                 )}
               </div>
               <p className="text-[22px] font-semibold tabular-nums text-[#0E0E0E] mt-1">
                 {churnRate !== null ? `${churnRate.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-[11px] text-[#9B9B9B]">target &lt;{churnKpi.green_threshold ?? 8}%</p>
+              <p className="text-[11px] text-[#9B9B9B]">target &lt;8%</p>
             </div>
           )}
           {launchKpi && (
             <div className="p-4 border border-[#E8E8E8] rounded-xl">
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-[#6B6B6B]">Onboarding → Launch</p>
-                {data.onboarding_to_launch_days != null && (
+                {data.onboarding_to_launch_days !== null && data.onboarding_to_launch_days !== undefined && launchKpi && (
                   <StatusDot status={getKpiStatus(data.onboarding_to_launch_days, launchKpi)} />
                 )}
               </div>
               <p className="text-[22px] font-semibold tabular-nums text-[#0E0E0E] mt-1">
                 {data.onboarding_to_launch_days != null ? `${data.onboarding_to_launch_days}d` : '—'}
               </p>
-              <p className="text-[11px] text-[#9B9B9B]">target ≤{launchKpi.green_threshold ?? 10} days</p>
+              <p className="text-[11px] text-[#9B9B9B]">target ≤10 days</p>
             </div>
           )}
         </div>
@@ -342,13 +329,12 @@ function CsmScorecard({
             label="Websites sold"
             fieldKey="websites_sold"
             value={data.websites_sold}
-            status={websitesKpi && data.websites_sold != null
-              ? getKpiStatusPaced(data.websites_sold, websitesKpi, daysElapsed, daysInMonth)
+            status={kpis.find(k => k.key === 'websites_sold') && data.websites_sold != null
+              ? getKpiStatus(data.websites_sold, kpis.find(k => k.key === 'websites_sold')!)
               : null}
             disabled={isReadOnly}
             onChange={onChange}
             onSave={onSave}
-            hint={paceHint(data.websites_sold, websitesKpi)}
           />
           <AutoSaveField
             label="Reviews collected"
@@ -429,7 +415,7 @@ function CsmScorecard({
           <textarea
             value={notes}
             onChange={e => onNotesChange(e.target.value)}
-            onBlur={() => onNotesSave()}
+            onBlur={handleNotesSave}
             disabled={isReadOnly}
             rows={3}
             placeholder="Anything relevant this month…"
@@ -439,6 +425,10 @@ function CsmScorecard({
       </section>
     </div>
   )
+
+  async function handleNotesSave() {
+    await onNotesSave()
+  }
 }
 
 // ── Media Buyer Scorecard ─────────────────────────────────────────────────────
@@ -447,7 +437,6 @@ function MediaBuyerScorecard({
   data,
   kpis,
   csmLaunchDays,
-  selectedMonth,
   notes,
   isReadOnly,
   onChange,
@@ -458,7 +447,6 @@ function MediaBuyerScorecard({
   data: MediaBuyerData
   kpis: KpiDefinition[]
   csmLaunchDays: number | null
-  selectedMonth: string
   notes: string
   isReadOnly: boolean
   onChange: (key: string, value: number | null) => void
@@ -466,8 +454,6 @@ function MediaBuyerScorecard({
   onNotesSave: () => Promise<void>
   onNotesChange: (v: string) => void
 }) {
-  const daysElapsed = getDaysElapsed(selectedMonth)
-  const daysInMonth = getDaysInMonth(selectedMonth)
   const cpaKpi = kpis.find(k => k.key === 'cpa_dfy')
   const cplKpi = kpis.find(k => k.key === 'cpl_dwy')
   const creativesKpi = kpis.find(k => k.key === 'new_creatives_tested')
@@ -512,14 +498,12 @@ function MediaBuyerScorecard({
             <div className="p-4 border border-[#E8E8E8] rounded-xl">
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-[#6B6B6B]">New Creatives Tested</p>
-                {data.new_creatives_tested != null && (
-                  <StatusDot status={getKpiStatusPaced(data.new_creatives_tested, creativesKpi, daysElapsed, daysInMonth)} />
-                )}
+                {data.new_creatives_tested != null && <StatusDot status={getKpiStatus(data.new_creatives_tested, creativesKpi)} />}
               </div>
               <p className="text-[22px] font-semibold tabular-nums text-[#0E0E0E] mt-1">
                 {data.new_creatives_tested ?? '—'}
               </p>
-              <p className="text-[11px] text-[#9B9B9B]">target {creativesKpi.target_monthly ?? 12}</p>
+              <p className="text-[11px] text-[#9B9B9B]">target 12</p>
             </div>
           )}
           <div className="p-4 border border-[#E8E8E8] rounded-xl">
@@ -572,15 +556,10 @@ function MediaBuyerScorecard({
             label="New creatives tested"
             fieldKey="new_creatives_tested"
             value={data.new_creatives_tested}
-            status={data.new_creatives_tested != null && creativesKpi
-              ? getKpiStatusPaced(data.new_creatives_tested, creativesKpi, daysElapsed, daysInMonth)
-              : null}
+            status={data.new_creatives_tested != null && creativesKpi ? getKpiStatus(data.new_creatives_tested, creativesKpi) : null}
             disabled={isReadOnly}
             onChange={onChange}
             onSave={onSave}
-            hint={creativesKpi
-              ? formatPaceHint(data.new_creatives_tested, creativesKpi, daysElapsed, daysInMonth) ?? undefined
-              : undefined}
           />
         </div>
 
@@ -607,7 +586,6 @@ function CsrScorecard({
   data,
   kpis,
   bonusRates,
-  selectedMonth,
   notes,
   isReadOnly,
   onChange,
@@ -618,7 +596,6 @@ function CsrScorecard({
   data: CsrData
   kpis: KpiDefinition[]
   bonusRates: BonusRate[]
-  selectedMonth: string
   notes: string
   isReadOnly: boolean
   onChange: (key: string, value: number | null) => void
@@ -626,19 +603,12 @@ function CsrScorecard({
   onNotesSave: () => Promise<void>
   onNotesChange: (v: string) => void
 }) {
-  const daysElapsed = getDaysElapsed(selectedMonth)
-  const daysInMonth = getDaysInMonth(selectedMonth)
   const bonusItems = useMemo(() => calcCsrBonus(data, bonusRates), [data, bonusRates])
   const total = useMemo(() => sumBonus(bonusItems), [bonusItems])
 
   const dialsKpi = useMemo(() => kpis.find(k => k.key === 'dials'), [kpis])
   const conversationsKpi = useMemo(() => kpis.find(k => k.key === 'conversations'), [kpis])
   const appointmentsKpi = useMemo(() => kpis.find(k => k.key === 'appointments_booked'), [kpis])
-
-  function paceHint(value: number | null | undefined, kpi: KpiDefinition | undefined) {
-    if (!kpi) return undefined
-    return formatPaceHint(value, kpi, daysElapsed, daysInMonth) ?? undefined
-  }
 
   return (
     <div className="space-y-8">
@@ -671,42 +641,36 @@ function CsrScorecard({
             <div className="p-4 border border-[#E8E8E8] rounded-xl">
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-[#6B6B6B]">Dials</p>
-                {data.dials != null && (
-                  <StatusDot status={getKpiStatusPaced(data.dials, dialsKpi, daysElapsed, daysInMonth)} />
-                )}
+                {data.dials != null && <StatusDot status={getKpiStatus(data.dials, dialsKpi)} />}
               </div>
               <p className="text-[22px] font-semibold tabular-nums text-[#0E0E0E] mt-1">
                 {data.dials ?? '—'}
               </p>
-              <p className="text-[11px] text-[#9B9B9B]">target {dialsKpi.target_monthly?.toLocaleString() ?? '—'}/month</p>
+              <p className="text-[11px] text-[#9B9B9B]">target 1,600/month</p>
             </div>
           )}
           {conversationsKpi && (
             <div className="p-4 border border-[#E8E8E8] rounded-xl">
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-[#6B6B6B]">Conversations</p>
-                {data.conversations != null && (
-                  <StatusDot status={getKpiStatusPaced(data.conversations, conversationsKpi, daysElapsed, daysInMonth)} />
-                )}
+                {data.conversations != null && <StatusDot status={getKpiStatus(data.conversations, conversationsKpi)} />}
               </div>
               <p className="text-[22px] font-semibold tabular-nums text-[#0E0E0E] mt-1">
                 {data.conversations ?? '—'}
               </p>
-              <p className="text-[11px] text-[#9B9B9B]">target {conversationsKpi.target_monthly?.toLocaleString() ?? '—'}/month</p>
+              <p className="text-[11px] text-[#9B9B9B]">target 240/month</p>
             </div>
           )}
           {appointmentsKpi && (
             <div className="p-4 border border-[#E8E8E8] rounded-xl">
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-[#6B6B6B]">Appointments Booked</p>
-                {data.appointments_booked != null && (
-                  <StatusDot status={getKpiStatusPaced(data.appointments_booked, appointmentsKpi, daysElapsed, daysInMonth)} />
-                )}
+                {data.appointments_booked != null && <StatusDot status={getKpiStatus(data.appointments_booked, appointmentsKpi)} />}
               </div>
               <p className="text-[22px] font-semibold tabular-nums text-[#0E0E0E] mt-1">
                 {data.appointments_booked ?? '—'}
               </p>
-              <p className="text-[11px] text-[#9B9B9B]">target {appointmentsKpi.target_monthly?.toLocaleString() ?? '—'}/month</p>
+              <p className="text-[11px] text-[#9B9B9B]">target 48/month</p>
             </div>
           )}
           <div className="p-4 border border-[#E8E8E8] rounded-xl">
@@ -727,34 +691,28 @@ function CsrScorecard({
             label="Dials this month"
             fieldKey="dials"
             value={data.dials}
-            status={data.dials != null && dialsKpi
-              ? getKpiStatusPaced(data.dials, dialsKpi, daysElapsed, daysInMonth) : null}
+            status={data.dials != null && dialsKpi ? getKpiStatus(data.dials, dialsKpi) : null}
             disabled={isReadOnly}
             onChange={onChange}
             onSave={onSave}
-            hint={paceHint(data.dials, dialsKpi)}
           />
           <AutoSaveField
             label="Conversations this month"
             fieldKey="conversations"
             value={data.conversations}
-            status={data.conversations != null && conversationsKpi
-              ? getKpiStatusPaced(data.conversations, conversationsKpi, daysElapsed, daysInMonth) : null}
+            status={data.conversations != null && conversationsKpi ? getKpiStatus(data.conversations, conversationsKpi) : null}
             disabled={isReadOnly}
             onChange={onChange}
             onSave={onSave}
-            hint={paceHint(data.conversations, conversationsKpi)}
           />
           <AutoSaveField
             label="Appointments booked"
             fieldKey="appointments_booked"
             value={data.appointments_booked}
-            status={data.appointments_booked != null && appointmentsKpi
-              ? getKpiStatusPaced(data.appointments_booked, appointmentsKpi, daysElapsed, daysInMonth) : null}
+            status={data.appointments_booked != null && appointmentsKpi ? getKpiStatus(data.appointments_booked, appointmentsKpi) : null}
             disabled={isReadOnly}
             onChange={onChange}
             onSave={onSave}
-            hint={paceHint(data.appointments_booked, appointmentsKpi)}
           />
           <AutoSaveField
             label="Shows this month"

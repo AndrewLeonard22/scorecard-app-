@@ -2,8 +2,8 @@
 
 import { HeadlineCard } from '@/components/HeadlineCard'
 import { RoleCard } from '@/components/RoleCard'
-import { getKpiStatus, getKpiStatusPaced } from '@/lib/utils/kpiUtils'
-import { getMonthLabel, isCurrentMonth, getDaysElapsed, getDaysInMonth } from '@/lib/utils/monthUtils'
+import { getKpiStatus } from '@/lib/utils/kpiUtils'
+import { getMonthLabel, isCurrentMonth } from '@/lib/utils/monthUtils'
 import type { Profile, KpiDefinition, MonthlySubmission, CsmData, MediaBuyerData, CsrData } from '@/lib/types/database'
 
 interface DashboardClientProps {
@@ -63,16 +63,12 @@ export function DashboardClient({
   const conversationsKpi = kpiFor('conversations')
   const appointmentsKpi = kpiFor('appointments_booked')
 
-  const isHistorical = !isCurrentMonth(selectedMonth)
-  const daysElapsed = getDaysElapsed(selectedMonth)
-  const daysInMonth = getDaysInMonth(selectedMonth)
-
-  // Headline statuses — churn/launch are averages, use raw; creatives is a cumulative count, use paced
+  // Headline statuses
   const churnStatus = churnKpi && churnRate !== null ? getKpiStatus(churnRate, churnKpi) : undefined
   const launchStatus = launchKpi && launchDays !== null ? getKpiStatus(launchDays, launchKpi) : undefined
-  const creativesStatus = creativesKpi && newCreatives !== null
-    ? getKpiStatusPaced(newCreatives, creativesKpi, daysElapsed, daysInMonth)
-    : undefined
+  const creativesStatus = creativesKpi && newCreatives !== null ? getKpiStatus(newCreatives, creativesKpi) : undefined
+
+  const isHistorical = !isCurrentMonth(selectedMonth)
 
   // Build CSM KPI rows
   const csmKpis = [
@@ -155,7 +151,6 @@ export function DashboardClient({
               profile={csmProfile}
               kpis={csmKpis}
               lastSavedAt={getSubmission(csmProfile.id)?.last_saved_at ?? null}
-              selectedMonth={selectedMonth}
             />
           ) : (
             <EmptyRoleCard role="CSM" />
@@ -165,7 +160,6 @@ export function DashboardClient({
               profile={mbProfile}
               kpis={mbKpis}
               lastSavedAt={getSubmission(mbProfile.id)?.last_saved_at ?? null}
-              selectedMonth={selectedMonth}
             />
           ) : (
             <EmptyRoleCard role="Media Buyer" />
@@ -175,7 +169,6 @@ export function DashboardClient({
               profile={csrProfile}
               kpis={csrKpis}
               lastSavedAt={getSubmission(csrProfile.id)?.last_saved_at ?? null}
-              selectedMonth={selectedMonth}
             />
           ) : (
             <EmptyRoleCard role="CSR / Setter" />
