@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   // Send invite email via Resend
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { error: emailErr } = await resend.emails.send({
-    from: 'SocialWorks <noreply@socialworkspro.com>',
+    from: 'SocialWorks <noreply@invite.socialworkspro.com>',
     to: email,
     subject: "You're invited to SocialWorks Scorecard",
     html: `
