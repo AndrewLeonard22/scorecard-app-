@@ -161,7 +161,7 @@ function NumberInput({
       value={value ?? ''}
       onChange={e => onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
       onBlur={onBlur}
-      className="w-full h-8 px-2.5 border border-[#E8E8E8] rounded-lg text-[13px] text-[#0E0E0E] tabular-nums bg-white focus:outline-none focus:border-[#1FA6F5] focus:ring-1 focus:ring-[#1FA6F5]/20 transition-colors placeholder:text-[#9B9B9B]"
+      className="w-full h-8 px-2.5 border border-[#E8E8E8] rounded-lg text-[13px] text-[#0E0E0E] tabular-nums bg-white focus:outline-none focus:border-[#1FA6F5] focus:ring-2 focus:ring-[#1FA6F5]/30 transition-colors placeholder:text-[#9B9B9B]"
       placeholder="—"
     />
   )

@@ -161,8 +161,8 @@ export function TeamMembersTab({ profiles: initialProfiles, currentUserId }: Tea
       </div>
 
       {/* Table */}
-      <div className="border border-[#E8E8E8] rounded-xl overflow-hidden">
-        <table className="w-full">
+      <div className="border border-[#E8E8E8] rounded-xl overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[520px]">
           <thead>
             <tr className="bg-[#FAFAFA] border-b border-[#E8E8E8]">
               <th className="text-left px-4 py-3 text-[11px] font-medium text-[#6B6B6B] uppercase tracking-wide">Name</th>
@@ -210,7 +210,7 @@ export function TeamMembersTab({ profiles: initialProfiles, currentUserId }: Tea
                     onClick={() => toggleActive(profile)}
                     disabled={profile.id === currentUserId}
                     className={cn(
-                      'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+                      'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1FA6F5] focus:ring-offset-1',
                       profile.active ? 'bg-[#1FA6F5]' : 'bg-[#E8E8E8]',
                       profile.id === currentUserId && 'opacity-40 cursor-not-allowed'
                     )}

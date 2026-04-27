@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { LogOut, User } from 'lucide-react'
+import { LogOut, User, Settings } from 'lucide-react'
 import { MonthPicker } from '@/components/MonthPicker'
 import { getCurrentMonth } from '@/lib/utils/monthUtils'
 import type { Role } from '@/lib/types/database'
@@ -103,7 +103,7 @@ export function AppNav({ fullName, role, monthsWithData = [] }: AppNavProps) {
                     : 'text-[#6B6B6B] hover:text-[#0E0E0E] hover:bg-[#FAFAFA]'
                 )}
               >
-                Admin
+                Admin Panel
               </Link>
             )}
           </nav>
@@ -128,7 +128,14 @@ export function AppNav({ fullName, role, monthsWithData = [] }: AppNavProps) {
                 <p className="text-xs text-[#6B6B6B]">{ROLE_LABELS[role]}</p>
               </div>
               <DropdownMenuSeparator />
-              {role !== 'admin' && (
+              {role === 'admin' ? (
+                <DropdownMenuItem onClick={() => {}} className="cursor-pointer p-0">
+                  <Link href="/admin" className="flex items-center w-full px-2 py-1.5">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
                 <DropdownMenuItem onClick={() => {}} className="cursor-pointer p-0">
                   <Link href="/me" className="flex items-center w-full px-2 py-1.5">
                     <User className="mr-2 h-4 w-4" />

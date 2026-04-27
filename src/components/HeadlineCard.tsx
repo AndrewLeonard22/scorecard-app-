@@ -19,7 +19,7 @@ export function HeadlineCard({ label, value, context, status, className }: Headl
       )}
     >
       {status && status !== 'neutral' && (
-        <StatusDot status={status} className="absolute top-4 right-4" />
+        <StatusDot status={status} className="absolute top-5 right-5" />
       )}
       <p className="text-[11px] font-medium uppercase tracking-wider text-[#6B6B6B] mb-2">
         {label}

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
@@ -24,8 +24,26 @@ type ResetData = z.infer<typeof resetSchema>
 
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [mode, setMode] = useState<'login' | 'reset' | 'reset-sent'>('login')
   const [loading, setLoading] = useState(false)
+  const [bannerError, setBannerError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Handle ?error= from our callback route
+    const err = searchParams.get('error')
+    if (err === 'link-expired') {
+      setBannerError('That invite or reset link has expired. Request a new one below.')
+    }
+
+    // Handle hash-based errors from Supabase (e.g. old-style links)
+    const hash = window.location.hash
+    if (hash.includes('error=access_denied') || hash.includes('otp_expired')) {
+      setBannerError('That invite or reset link has expired. Request a new one below.')
+      // Clean the hash from the URL without a page reload
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }, [searchParams])
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -64,7 +82,7 @@ export function LoginForm() {
     setLoading(true)
     const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/me`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
     })
     setLoading(false)
     if (error) { toast.error(error.message); return }
@@ -133,6 +151,11 @@ export function LoginForm() {
 
   return (
     <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+      {bannerError && (
+        <div className="rounded-lg bg-[#FEF2F2] border border-[#FCA5A5] px-3 py-2.5">
+          <p className="text-[13px] text-[#DC2626]">{bannerError}</p>
+        </div>
+      )}
       <div className="mb-2">
         <p className="text-[16px] font-semibold text-[#0E0E0E]">Sign in</p>
       </div>
@@ -180,9 +203,10 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-10 bg-[#1FA6F5] hover:bg-[#1890D8] text-white text-[14px] font-medium rounded-lg transition-colors flex items-center justify-center disabled:opacity-60"
+        className="w-full h-10 bg-[#1FA6F5] hover:bg-[#1890D8] text-white text-[14px] font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Log in'}
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {loading ? 'Signing in…' : 'Log in'}
       </button>
 
       <div className="text-center">

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AppNav } from '@/components/nav/AppNav'
+import { AuthHashCleaner } from '@/components/AuthHashCleaner'
 import { MOCK_PROFILES } from '@/lib/mockData'
 import type { Role } from '@/lib/types/database'
 
@@ -21,20 +22,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     )
   }
 
-  // getSession() reads the JWT from the cookie — no network call to Supabase.
-  // Middleware already validated auth server-side before we get here.
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
-
   if (!session) redirect('/login')
 
-  // full_name and role are stored in user_metadata at invite time.
-  // Avoids a profiles DB query on every navigation just to render the nav.
-  const fullName = (session.user.user_metadata?.full_name ?? session.user.email ?? '') as string
-  const role = (session.user.user_metadata?.role ?? 'csr') as Role
+  // Always read role from the profiles table — JWT metadata can be stale
+  // (e.g. admin changes someone's role after they've already logged in).
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, role')
+    .eq('id', session.user.id)
+    .single()
+
+  const fullName = profile?.full_name ?? session.user.email ?? ''
+  const role = (profile?.role ?? 'csr') as Role
 
   return (
     <div className="min-h-screen bg-white">
+      <AuthHashCleaner />
       <AppNav fullName={fullName} role={role} monthsWithData={[]} />
       {children}
     </div>

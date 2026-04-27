@@ -32,14 +32,19 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Unauthenticated → login
-  if (!user && pathname !== '/login') {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Public routes — no auth required
+  const publicPaths = ['/login', '/auth/callback', '/update-password']
+  if (publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+    // Logged-in user hitting /login → send them home
+    if (user && pathname === '/login') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    return supabaseResponse
   }
 
-  // Authenticated + login page → redirect to appropriate home
-  if (user && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // Unauthenticated → login
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Legacy /submit route → /me

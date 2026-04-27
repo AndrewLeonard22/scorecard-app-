@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { BonusTable } from '@/components/BonusTable'
@@ -10,7 +10,6 @@ import { formatCurrency, getKpiStatus } from '@/lib/utils/kpiUtils'
 import {
   getMonthLabel,
   isMonthLocked,
-  isCurrentMonth,
   formatRelativeTime,
 } from '@/lib/utils/monthUtils'
 import { calcCsmBonus, calcCsrBonus, sumBonus, calcAdSpendPreview } from '@/lib/utils/bonusUtils'
@@ -52,7 +51,15 @@ export function PersonalScorecard({
   const [lastSavedAt, setLastSavedAt] = useState(submission?.last_saved_at ?? null)
   const [locked] = useState(submission?.locked ?? isMonthLocked(selectedMonth))
 
-  const isReadOnly = locked || !isCurrentMonth(selectedMonth)
+  const isReadOnly = locked || isMonthLocked(selectedMonth)
+
+  // Re-sync state if the server loads a different submission (e.g. navigating back after saving)
+  useEffect(() => {
+    setData((submission?.data ?? {}) as Record<string, number | null>)
+    setNotes(submission?.notes ?? '')
+    setLastSavedAt(submission?.last_saved_at ?? null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submission?.id, selectedMonth])
 
   // Refs so save callbacks never need to re-create when data/notes change
   const dataRef = useRef(data)
@@ -110,9 +117,9 @@ export function PersonalScorecard({
     <main className="max-w-3xl mx-auto px-6 py-8">
         {/* Locked banner */}
         {isReadOnly && (
-          <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-[#FAFAFA] border border-[#E8E8E8] rounded-lg">
-            <Lock className="h-4 w-4 text-[#6B6B6B]" />
-            <p className="text-[13px] text-[#6B6B6B]">
+          <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <Lock className="h-4 w-4 text-amber-600 flex-shrink-0" />
+            <p className="text-[13px] text-amber-800">
               {locked ? 'This month is locked — read only.' : `Viewing ${monthLabel} — read only.`}
             </p>
           </div>
@@ -360,7 +367,7 @@ function CsmScorecard({
           <AutoSaveField
             label="Clients upsold on longer-term contracts"
             fieldKey="contracts_extended"
-            value={(data as CsmData & { contracts_extended?: number | null }).contracts_extended}
+            value={data.contracts_extended}
             disabled={isReadOnly}
             onChange={onChange}
             onSave={onSave}
@@ -412,7 +419,7 @@ function CsmScorecard({
             disabled={isReadOnly}
             rows={3}
             placeholder="Anything relevant this month…"
-            className="w-full px-3 py-2 border border-[#E8E8E8] rounded-lg text-[14px] text-[#0E0E0E] placeholder:text-[#9B9B9B] focus:outline-none focus:border-[#1FA6F5] focus:ring-1 focus:ring-[#1FA6F5] transition-colors disabled:bg-[#FAFAFA] disabled:text-[#9B9B9B] resize-none"
+            className="w-full px-3 py-2 border border-[#E8E8E8] rounded-lg text-[14px] text-[#0E0E0E] placeholder:text-[#6B6B6B] focus:outline-none focus:border-[#1FA6F5] focus:ring-1 focus:ring-[#1FA6F5] transition-colors disabled:bg-[#FAFAFA] disabled:text-[#9B9B9B] resize-none"
           />
         </div>
       </section>
@@ -565,7 +572,7 @@ function MediaBuyerScorecard({
             disabled={isReadOnly}
             rows={3}
             placeholder="Anything relevant this month…"
-            className="w-full px-3 py-2 border border-[#E8E8E8] rounded-lg text-[14px] text-[#0E0E0E] placeholder:text-[#9B9B9B] focus:outline-none focus:border-[#1FA6F5] focus:ring-1 focus:ring-[#1FA6F5] transition-colors disabled:bg-[#FAFAFA] disabled:text-[#9B9B9B] resize-none"
+            className="w-full px-3 py-2 border border-[#E8E8E8] rounded-lg text-[14px] text-[#0E0E0E] placeholder:text-[#6B6B6B] focus:outline-none focus:border-[#1FA6F5] focus:ring-1 focus:ring-[#1FA6F5] transition-colors disabled:bg-[#FAFAFA] disabled:text-[#9B9B9B] resize-none"
           />
         </div>
       </section>
@@ -726,7 +733,7 @@ function CsrScorecard({
             disabled={isReadOnly}
             rows={3}
             placeholder="Anything relevant this month…"
-            className="w-full px-3 py-2 border border-[#E8E8E8] rounded-lg text-[14px] text-[#0E0E0E] placeholder:text-[#9B9B9B] focus:outline-none focus:border-[#1FA6F5] focus:ring-1 focus:ring-[#1FA6F5] transition-colors disabled:bg-[#FAFAFA] disabled:text-[#9B9B9B] resize-none"
+            className="w-full px-3 py-2 border border-[#E8E8E8] rounded-lg text-[14px] text-[#0E0E0E] placeholder:text-[#6B6B6B] focus:outline-none focus:border-[#1FA6F5] focus:ring-1 focus:ring-[#1FA6F5] transition-colors disabled:bg-[#FAFAFA] disabled:text-[#9B9B9B] resize-none"
           />
         </div>
       </section>

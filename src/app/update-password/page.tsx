@@ -1,12 +1,9 @@
-export const dynamic = 'force-dynamic'
+import { UpdatePasswordForm } from './UpdatePasswordForm'
 
-import { LoginForm } from './LoginForm'
-
-export default function LoginPage() {
+export default function UpdatePasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-4">
       <div className="w-full max-w-[400px]">
-        {/* Wordmark */}
         <div className="mb-8 flex justify-center">
           <div className="flex items-center gap-1.5">
             <span className="text-[18px] font-semibold text-[#0E0E0E] tracking-tight">
@@ -16,9 +13,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Card */}
         <div className="bg-white border border-[#E8E8E8] rounded-xl shadow-sm p-8">
-          <LoginForm />
+          <UpdatePasswordForm />
         </div>
       </div>
     </div>

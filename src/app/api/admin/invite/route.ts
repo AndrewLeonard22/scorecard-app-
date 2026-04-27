@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await serviceClient.auth.admin.inviteUserByEmail(email, {
     data: { full_name: name, role },
-    redirectTo: `${appUrl}/me`,
+    redirectTo: `${appUrl}/auth/callback?next=/update-password`,
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

@@ -111,7 +111,7 @@ export function DashboardClient({
         </div>
 
         {/* Headline strip */}
-        <div className="grid grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           <HeadlineCard
             label="Team Churn Rate"
             value={churnRate !== null ? `${churnRate.toFixed(1)}%` : '—'}
@@ -145,27 +145,33 @@ export function DashboardClient({
         </div>
 
         {/* Role cards */}
-        <div className="grid grid-cols-3 gap-6">
-          {csmProfile && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {csmProfile ? (
             <RoleCard
               profile={csmProfile}
               kpis={csmKpis}
               lastSavedAt={getSubmission(csmProfile.id)?.last_saved_at ?? null}
             />
+          ) : (
+            <EmptyRoleCard role="CSM" />
           )}
-          {mbProfile && (
+          {mbProfile ? (
             <RoleCard
               profile={mbProfile}
               kpis={mbKpis}
               lastSavedAt={getSubmission(mbProfile.id)?.last_saved_at ?? null}
             />
+          ) : (
+            <EmptyRoleCard role="Media Buyer" />
           )}
-          {csrProfile && (
+          {csrProfile ? (
             <RoleCard
               profile={csrProfile}
               kpis={csrKpis}
               lastSavedAt={getSubmission(csrProfile.id)?.last_saved_at ?? null}
             />
+          ) : (
+            <EmptyRoleCard role="CSR / Setter" />
           )}
         </div>
 
@@ -174,5 +180,13 @@ export function DashboardClient({
           Bonus amounts are visible on your personal scorecard.
         </p>
     </main>
+  )
+}
+
+function EmptyRoleCard({ role }: { role: string }) {
+  return (
+    <div className="bg-white border border-dashed border-[#E8E8E8] rounded-xl p-5 flex items-center justify-center min-h-[120px]">
+      <p className="text-[13px] text-[#9B9B9B]">No {role} assigned yet</p>
+    </div>
   )
 }
