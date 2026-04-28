@@ -38,6 +38,9 @@ export function DashboardClient({
   const churnRate = primaryCsmData?.clients_active_start && primaryCsmData.clients_lost != null
     ? (primaryCsmData.clients_lost / primaryCsmData.clients_active_start) * 100
     : null
+  const pauseRate = primaryCsmData?.clients_active_start && primaryCsmData.clients_paused != null
+    ? (primaryCsmData.clients_paused / primaryCsmData.clients_active_start) * 100
+    : null
   const launchDays = primaryCsmData?.onboarding_to_launch_days ?? null
   const activeClients = primaryCsmData?.clients_active_end ?? null
   const netClients = primaryCsmData?.clients_active_end != null && primaryCsmData?.clients_active_start != null
@@ -53,6 +56,7 @@ export function DashboardClient({
   }
 
   const churnKpi = kpiFor('churn_rate')
+  const pauseKpi = kpiFor('pause_rate')
   const launchKpi = kpiFor('onboarding_to_launch_days')
   const creativesKpi = kpiFor('new_creatives_tested')
   const cpaKpi = kpiFor('cpa_dfy')
@@ -62,14 +66,16 @@ export function DashboardClient({
   const appointmentsKpi = kpiFor('appointments_booked')
 
   const churnStatus = churnKpi && churnRate !== null ? getKpiStatus(churnRate, churnKpi) : undefined
+  const pauseStatus = pauseKpi && pauseRate !== null ? getKpiStatus(pauseRate, pauseKpi) : undefined
   const launchStatus = launchKpi && launchDays !== null ? getKpiStatus(launchDays, launchKpi) : undefined
   const creativesStatus = creativesKpi && newCreatives !== null ? getKpiStatus(newCreatives, creativesKpi) : undefined
 
   const isHistorical = !isCurrentMonth(selectedMonth)
 
-  function buildCsmKpis(data: CsmData, churn: number | null) {
+  function buildCsmKpis(data: CsmData, churn: number | null, pause: number | null) {
     return [
-      churnKpi && { kpi: churnKpi, value: churn, targetLabel: 'target <8%' },
+      churnKpi && { kpi: churnKpi, value: churn, targetLabel: `target <${churnKpi.green_threshold}%` },
+      pauseKpi && { kpi: pauseKpi, value: pause, targetLabel: `target <${pauseKpi.green_threshold}%` },
       launchKpi && { kpi: launchKpi, value: data.onboarding_to_launch_days, targetLabel: '/ 10d' },
       kpiFor('websites_sold') && { kpi: kpiFor('websites_sold')!, value: data.websites_sold },
       kpiFor('reviews_collected') && { kpi: kpiFor('reviews_collected')!, value: data.reviews_collected },
@@ -111,12 +117,18 @@ export function DashboardClient({
       </div>
 
       {/* Headline strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <HeadlineCard
-          label="Team Churn Rate"
+          label="Churn Rate"
           value={churnRate !== null ? `${churnRate.toFixed(1)}%` : '—'}
-          context="target <8%"
+          context={`target <${churnKpi?.green_threshold ?? 8}%`}
           status={churnStatus}
+        />
+        <HeadlineCard
+          label="Pause Rate"
+          value={pauseRate !== null ? `${pauseRate.toFixed(1)}%` : '—'}
+          context={`target <${pauseKpi?.green_threshold ?? 5}%`}
+          status={pauseStatus}
         />
         <HeadlineCard
           label="Onboarding → Launch"
@@ -151,11 +163,14 @@ export function DashboardClient({
           const churn = data.clients_active_start && data.clients_lost != null
             ? (data.clients_lost / data.clients_active_start) * 100
             : null
+          const pause = data.clients_active_start && data.clients_paused != null
+            ? (data.clients_paused / data.clients_active_start) * 100
+            : null
           return (
             <RoleCard
               key={profile.id}
               profile={profile}
-              kpis={buildCsmKpis(data, churn)}
+              kpis={buildCsmKpis(data, churn, pause)}
               lastSavedAt={getSubmission(profile.id)?.last_saved_at ?? null}
             />
           )

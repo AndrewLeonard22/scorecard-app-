@@ -61,6 +61,7 @@ export interface CsmData {
   clients_active_start?: number | null
   clients_active_end?: number | null
   clients_lost?: number | null
+  clients_paused?: number | null
   websites_sold?: number | null
   reviews_collected?: number | null
   video_interviews?: number | null

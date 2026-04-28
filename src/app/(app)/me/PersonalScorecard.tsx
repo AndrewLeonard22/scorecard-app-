@@ -234,7 +234,15 @@ function CsmScorecard({
     [data.clients_active_start, data.clients_lost]
   )
 
+  const pauseRate = useMemo(() =>
+    data.clients_active_start && data.clients_paused != null
+      ? (data.clients_paused / data.clients_active_start) * 100
+      : null,
+    [data.clients_active_start, data.clients_paused]
+  )
+
   const churnKpi = useMemo(() => kpis.find(k => k.key === 'churn_rate'), [kpis])
+  const pauseKpi = useMemo(() => kpis.find(k => k.key === 'pause_rate'), [kpis])
   const launchKpi = useMemo(() => kpis.find(k => k.key === 'onboarding_to_launch_days'), [kpis])
 
   const adSpendRate = useMemo(() => bonusRates.find(r => r.key === 'ad_spend_upsell'), [bonusRates])
@@ -274,14 +282,28 @@ function CsmScorecard({
             <div className="p-4 border border-[#E8E8E8] rounded-xl">
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-[#6B6B6B]">Churn Rate</p>
-                {churnRate !== null && churnKpi && (
+                {churnRate !== null && (
                   <StatusDot status={getKpiStatus(churnRate, churnKpi)} />
                 )}
               </div>
               <p className="text-[22px] font-semibold tabular-nums text-[#0E0E0E] mt-1">
                 {churnRate !== null ? `${churnRate.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-[11px] text-[#9B9B9B]">target &lt;8%</p>
+              <p className="text-[11px] text-[#9B9B9B]">target &lt;{churnKpi.green_threshold}%</p>
+            </div>
+          )}
+          {pauseKpi && (
+            <div className="p-4 border border-[#E8E8E8] rounded-xl">
+              <div className="flex items-center justify-between">
+                <p className="text-[12px] text-[#6B6B6B]">Pause Rate</p>
+                {pauseRate !== null && (
+                  <StatusDot status={getKpiStatus(pauseRate, pauseKpi)} />
+                )}
+              </div>
+              <p className="text-[22px] font-semibold tabular-nums text-[#0E0E0E] mt-1">
+                {pauseRate !== null ? `${pauseRate.toFixed(1)}%` : '—'}
+              </p>
+              <p className="text-[11px] text-[#9B9B9B]">target &lt;{pauseKpi.green_threshold}%</p>
             </div>
           )}
           {launchKpi && (
@@ -325,6 +347,14 @@ function CsmScorecard({
             label="Clients lost"
             fieldKey="clients_lost"
             value={data.clients_lost}
+            disabled={isReadOnly}
+            onChange={onChange}
+            onSave={onSave}
+          />
+          <AutoSaveField
+            label="Clients paused"
+            fieldKey="clients_paused"
+            value={data.clients_paused}
             disabled={isReadOnly}
             onChange={onChange}
             onSave={onSave}
